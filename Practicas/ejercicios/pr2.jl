@@ -161,3 +161,89 @@ function buildClassANN(numInputs::Int,
     return ann
 end
 
+### TRAIN ANN ###
+
+function trainClassANN(topology::AbstractArray{<:Int,1},
+                       dataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
+                       transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
+                       maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
+    # Extraer inputs y targets
+    inputs, targets = dataset
+    
+    # Verificar dimensiones
+    @assert size(inputs, 1) == size(targets, 1) "Número de patrones inconsistente"
+    
+    # Construir la ANN
+    numInputs = size(inputs, 2)
+    numOutputs = size(targets, 2)
+    
+    ann = buildClassANN(numInputs, topology, numOutputs; transferFunctions=transferFunctions)
+    
+    # Definir función de pérdida
+    if numOutputs == 1
+        # Para salida binaria (sigmoid + binary cross-entropy)
+        loss(x, y) = Flux.binarycrossentropy(ann(x), y)
+    else
+        # Para múltiples clases (softmax + cross-entropy)
+        loss(x, y) = Flux.crossentropy(ann(x), y)
+    end
+    
+    # Preparar datos para Flux (transponer para que las columnas sean patrones)
+    X = Matrix{Float32}(inputs')
+    Y = Matrix{Float32}(targets')
+    
+    # Definir optimizador
+    opt = Descent(learningRate)
+    
+    # Parámetros entrenables
+    params = Flux.params(ann)
+    
+    # Historial de pérdida
+    lossHistory = Float32[]
+    
+    # Entrenamiento
+    for epoch in 1:maxEpochs
+        # Calcular gradiente y actualizar pesos
+        grads = Flux.gradient(params) do
+            loss(X, Y)
+        end
+        
+        Flux.update!(opt, params, grads)
+        
+        # Calcular y almacenar pérdida
+        currentLoss = loss(X, Y)
+        push!(lossHistory, currentLoss)
+        
+        # Verificar criterio de parada
+        if currentLoss <= minLoss
+            println("Parada temprana en época $epoch con pérdida $currentLoss")
+            break
+        end
+        
+        # Mostrar progreso cada 100 épocas
+        if epoch % 100 == 0
+            println("Época $epoch, Pérdida: $currentLoss")
+        end
+    end
+    
+    # Devolver la red entrenada y el historial de pérdida
+    return (ann, lossHistory)
+end;
+
+function trainClassANN(topology::AbstractArray{<:Int,1},
+                       (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
+                       transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
+                       maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
+    
+    # Convertir targets a matriz 2D (una columna)
+    targetsMatrix = reshape(targets, :, 1)
+    
+    # Llamar a la versión anterior con formato correcto
+    return trainClassANN(topology, 
+                         (inputs, targetsMatrix);
+                         transferFunctions=transferFunctions,
+                         maxEpochs=maxEpochs,
+                         minLoss=minLoss,
+                         learningRate=learningRate)
+end;
+

@@ -110,7 +110,7 @@ println("="^70)
 dataset = readdlm(joinpath(@__DIR__, "iris.data"), ',')
 inputs = convert(Array{Float32,2}, dataset[:,1:4])
 
-@testset "Rúbrica Oficial - Ejercicio 2" begin
+@testset "Rubrica Oficial" begin
     
     @testset "oneHotEncoding con Iris" begin
         targets = oneHotEncoding(dataset[:,5])
@@ -120,35 +120,37 @@ inputs = convert(Array{Float32,2}, dataset[:,1:4])
         @test all(targets[ 51:100,2]) && !any(targets[ 51:100,[1,3]])  # Segunda clase
         @test all(targets[101:150,3]) && !any(targets[101:150, 1:2] )  # Tercera clase
         
-        println("  ✓ oneHotEncoding con dataset Iris correcto")
+        println("   ✓ oneHotEncoding con dataset Iris correcto")
     end
     
-    @testset "Normalización con Iris" begin
+    @testset "Normalizacion con Iris" begin
         newInputs = normalizeMinMax(inputs)
         @test !isnothing(newInputs)
         @test all(minimum(newInputs, dims=1) .== 0)
         @test all(maximum(newInputs, dims=1) .== 1)
-        println("  ✓ normalizeMinMax correcto")
+        println("   ✓ normalizeMinMax correcto")
         
-
+        # Normalizacion entre maximo y minimo
         newInputs = normalizeZeroMean(inputs)
         @test !isnothing(newInputs)
         @test all(abs.(mean(newInputs, dims=1)) .<= 1e-4)
         @test all(isapprox.(std(newInputs, dims=1), 1))
-        println("  ✓ normalizeZeroMean correcto")
+        println("   ✓ normalizeZeroMean correcto")
 
+        # Normalizacion de media 0
         normalizeMinMax!(inputs)
         @test all(minimum(inputs, dims=1) .== 0)
         @test all(maximum(inputs, dims=1) .== 1)
-        println("  ✓ normalizeMinMax! correcto")
+        println("   ✓ normalizeMinMax! correcto")
     end
     
     @testset "classifyOutputs" begin
         @test classifyOutputs(0.1:0.1:1; threshold=0.65) == [falses(6); trues(4)]
         @test classifyOutputs([1 2 3; 3 2 1; 2 3 1; 2 1 3]) == Bool[0 0 1; 1 0 0; 0 1 0; 0 0 1]
-        println("  ✓ classifyOutputs correcto")
+        println("   ✓ classifyOutputs correcto")
     end
     
+    # Creacion de RNA correcta
     @testset "buildClassANN con Iris" begin
         ann = buildClassANN(4, [5], 3)
         
@@ -157,18 +159,19 @@ inputs = convert(Array{Float32,2}, dataset[:,1:4])
         @test size(ann[1].weight) == (5,4)
         @test size(ann[2].weight) == (3,5)
         @test size(ann(inputs')) == (3,150)
-        println("  ✓ buildClassANN correcto")
+        println("   ✓ buildClassANN correcto")
     end
     
+    # Comprobar accuracy 
     @testset "accuracy con Iris" begin
         targets = oneHotEncoding(dataset[:,5])
         
         @test isapprox(accuracy([sin.(1:150) cos.(1:150) tan.(1:150)], targets), 0.34)
         @test isapprox(accuracy(1:(-1/150):(1/150), targets[:,1]; threshold=0.75), 0.92)
-        println("  ✓ accuracy correcto")
+        println("   ✓ accuracy correcto")
     end
 end
 
 println("\n" * "="^70)
-println("✓✓✓ TODOS LOS TESTS COMPLETADOS EXITOSAMENTE ✓✓✓")
+println("✓✓✓ TODOS LOS TESTS COMPLETADOS CORRECTAMENTE ✓✓✓")
 println("="^70)

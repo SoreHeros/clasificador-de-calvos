@@ -96,9 +96,72 @@ println("="^70)
         
         @test_throws AssertionError buildClassANN(2, [3], 1; transferFunctions=Function[])
     end
+
+
+    @testset "trainClassANN" begin
+        inputs = rand(Float32, 10, 2) 
+        targets = rand(Bool, 10, 1)
+        dataset = (inputs, targets)
+        topology = [4]
+        
+        # --- Prueba de Ciclo 0 y Longitud ---
+        ann, losses = trainClassANN(topology, dataset; maxEpochs=10, minLoss=-1.0)
+        
+        # El vector de pérdidas debe tener n+1 elementos (0 a n)
+        @test length(losses) == 11 
+        # El primer valor debe ser mayor que 0 (error inicial)
+        @test losses[1] > 0
+        
+        # --- Prueba de Tipado ---
+        # Comprobamos que los datos esten en Float32 como pide el enunciado
+        @test eltype(losses) == Float32
+        
+        # --- Prueba de Reproducibilidad ---
+        # Random.seed!(1) asegurar que dos llamadas produzcan lo mismo
+        ann1, losses1 = trainClassANN(topology, dataset; maxEpochs=5, minLoss=-1.0)
+        ann2, losses2 = trainClassANN(topology, dataset; maxEpochs=5, minLoss=-1.0)
+        
+        @test losses1 == losses2
+        # Verificar pesos de la primera capa para asegurar que la red es idéntica
+        @test ann1[1].weight == ann2[1].weight
+        
+        # --- Prueba de Transposición y Entrenamiento ---
+        # Si funciona sin error de dimensión, la transposición es coherente.
+        ann_train, losses_train = trainClassANN(topology, dataset; maxEpochs=100, learningRate=0.05, minLoss=-1.0)
+        # El error final debería ser menor o igual al inicial (generalmente menor)
+        @test losses_train[end] <= losses_train[1] 
+
+        # --- Prueba de Parada Temprana (minLoss) ---
+        # Entrenamos con un minLoss alto que sea fácil de alcanzar
+        # Como los inputs son aleatorios, el error no bajará a 0, pero si ponemos un minLoss
+        # mayor que el error inicial, debería parar en el ciclo 0 o 1.
+        # Para asegurar, usamos un threshold alto.
+        initial_loss = losses[1]
+        target_min_loss = initial_loss * 1.5 # Imposible de bajar si es Loss, pero si es mayor... 
+        # Espera, minLoss es una cota INFERIOR. Si currentLoss < minLoss para.
+        # Para probar esto, ne  cesitamos que el error baje lo suficiente.
+        # O podemos poner un minLoss que sepamos que se alcanzará.
+        # Mejor estrategia: Entrenar X épocas, ver el loss final. Entrenar de nuevo con minLoss = loss final + epsilon.
+        # Debería parar antes.
+        
+        ann_early, losses_early = trainClassANN(topology, dataset; maxEpochs=1000, minLoss=losses_train[end] + 0.05)
+        # Debería haber parado antes de las 1000 épocas si alcanzó el minLoss
+        @test length(losses_early) < 1001
+        
+        # --- Prueba de Vectores ---
+        targets_vec = vec(targets)
+        dataset_vec = (inputs, targets_vec)
+        
+        ann_vec, losses_vec = trainClassANN(topology, dataset_vec; maxEpochs=5, minLoss=-1.0)
+        
+        @test length(losses_vec) == 6
+        @test losses_vec[1] > 0
+        @test eltype(losses_vec) == Float32
+    end
 end
 
 println("\n✓ Todos los tests propios completados correctamente")
+
 
 ###### RUBRICA OFICIAL ####
 

@@ -3,6 +3,8 @@ using Flux
 using Flux.Losses
 using Random
 
+# EJERCICIO 2
+
 ###### ONE HOT ENCODING #######
 function oneHotEncoding(feature::AbstractArray{<:Any,1}, classes::AbstractArray{<:Any,1})
     numClasses = length(classes)
@@ -252,3 +254,14 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
                          learningRate=learningRate)
 end;
 
+# EJERCICIO 3
+
+function holdOut(N::Int, P::Real) #N numero de patrones y P porcentaje de patrones para el cojunto test
+    index = randperm(N) #Generar un vector con numeros del 1 a N ordenados aleatoriamente 
+    test_number = round(Int,N * (1 - P)) 
+    return (index[1:test_number],index[test_number+1:N])
+end;
+
+function holdOut(N::Int, Pval::Real, Ptest::Real)
+    
+end;

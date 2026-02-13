@@ -263,5 +263,8 @@ function holdOut(N::Int, P::Real) #N numero de patrones y P porcentaje de patron
 end;
 
 function holdOut(N::Int, Pval::Real, Ptest::Real)
-    
+    rest, v_test = holdOut(N,Ptest)
+    new_pval = Pval*N/length(rest)
+    v_train, v_val = holdOut(length(rest),new_pval)
+    return (v_train,v_val,v_test)
 end;

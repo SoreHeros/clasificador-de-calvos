@@ -2,7 +2,7 @@ using Statistics
 using Flux
 using Test
 using DelimitedFiles
-using Random
+using Random: seed!
 
 include("../ejercicios/pr2.jl")
 
@@ -232,6 +232,21 @@ inputs = convert(Array{Float32,2}, dataset[:,1:4])
         @test isapprox(accuracy([sin.(1:150) cos.(1:150) tan.(1:150)], targets), 0.34)
         @test isapprox(accuracy(1:(-1/150):(1/150), targets[:,1]; threshold=0.75), 0.92)
         println("   ✓ accuracy correcto")
+    end
+
+     # Comprobar la funcion hold out  
+    @testset "hold out" begin
+            # Establecemos la semilla para que los resultados sean siempre los mismos
+        # Comprobamos que la generación de números aleatorios es la esperada:
+        seed!(1); @assert(isapprox(rand(), 0.07336635446929285))
+        #  Si fallase aquí, seguramente dara error al comprobar los resultados de la ejecución de la siguiente función porque depende de la generación de números aleatorios
+
+
+        # Unas comprobaciones sencillas de la función holdOut:
+        @assert(all(length.(holdOut(10, 0.3))      .== [7,3]  ))
+        @assert(all(length.(holdOut(10, 0.3, 0.2)) .== [5,3,2]))
+        println("   ✓ hold out correcto")
+
     end
 end
 

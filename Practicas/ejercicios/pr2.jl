@@ -55,7 +55,7 @@ function normalizeMinMax!(dataset::AbstractArray{<:Real,2},
     range = maxValues .- minValues
     range[range .== 0] .= 1
     dataset ./= range
-    return nothing
+    return dataset
 end
 
 # version automatica de lo de arriba
@@ -84,7 +84,7 @@ function normalizeZeroMean!(dataset::AbstractArray{<:Real,2},
     dataset .-= meanValues
     stdValues[stdValues .== 0] .= 1
     dataset ./= stdValues
-    return nothing
+    return dataset
 end
 
 function normalizeZeroMean!(dataset::AbstractArray{<:Real,2})

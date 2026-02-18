@@ -268,3 +268,141 @@ function holdOut(N::Int, Pval::Real, Ptest::Real)
     v_train, v_val = holdOut(length(rest),new_pval)
     return (v_train,v_val,v_test)
 end;
+
+# Función auxiliar para la función trainClassANN
+function preparar_si_existe(dataset) 
+    if size (dataset[1], 1) > 0 
+        return Float32.(dataset[1]'), Float32.(dataset[2]')
+    else 
+        nothing, nothing
+    end
+end;
+
+function trainClassANN(topology::AbstractArray{<:Int,1},
+    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
+    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}} = 
+        (Array{eltype(trainingDataset[1]),2}(undef,0,size(trainingDataset[1],2)), falses(0,size(trainingDataset[2],2))),
+    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}} = 
+        (Array{eltype(trainingDataset[1]),2}(undef,0,size(trainingDataset[1],2)), falses(0,size(trainingDataset[2],2))),
+    transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01, 
+    maxEpochsVal::Int=20) 
+
+    # Semilla fija para reproducibilidad
+    Random.seed!(1)
+                       
+    # Historial de pérdida
+    lossHistory = Float32[]
+
+    # Extraer y preparar datos de entrenamiento
+    inputsTrain, targetsTrain = trainingDataset
+    X_train = Float32.(inputsTrain')
+    Y_train = Float32.(targetsTrain')
+    
+    # Verificar dimensiones
+    @assert size(inputsTrain, 1) == size(targetsTrain, 1) "Número de patrones inconsistente"
+    
+    # Construir la ANN
+    numInputs = size(inputsTrain, 2)
+    numOutputs = size(targetsTrain, 2)
+    ann = buildClassANN(numInputs, topology, numOutputs; transferFunctions=transferFunctions)
+    
+    # Definir función de pérdida en la forma que sugiere el enunciado 
+    loss(model, x, y) = (size(y, 1) == 1) ? Losses.binarycrossentropy(model(x), y) : Losses.crossentropy(model(x), y)
+    
+    # Preparamos los datos de validación y test
+    X_val,  Y_val  = preparar_si_existe(validationDataset)
+    X_test, Y_test = preparar_si_existe(testDataset)
+    
+    # Definir optimizador con Adam como sugiere el enunciado 
+    opt_state = Flux.setup(Adam(learningRate), ann)
+    
+    # Inicializamos los 3 historiales
+    trainLosses = Float32[]
+    valLosses   = Float32[]
+    testLosses  = Float32[]
+
+    # Calculamos y guardamos el Ciclo 0 una sola vez por conjunto
+    currentTrainLoss = Float32(loss(ann, X_train, Y_train))
+    push!(trainLosses, currentTrainLoss)
+
+    if !isnothing(X_val)
+        currentValLoss = Float32(loss(ann, X_val, Y_val))
+        push!(valLosses, currentValLoss)
+        bestValLoss = currentValLoss # El mejor hasta ahora es el inicial
+    else
+        bestValLoss = Inf32 # Infinito si no hay validación para que no interfiera
+    end
+
+    if !isnothing(X_test)
+        push!(testLosses, Float32(loss(ann, X_test, Y_test)))
+    end
+
+    # Inicializar mejor red
+    bestAnn = deepcopy(ann)
+    # Si hay validación, el mejor loss inicial es el de validación; si no, Inf porque siempre va a ser mayor que el loss de entrenamiento
+    bestValLoss = !isnothing(X_val) ? Float32(loss(ann, X_val, Y_val)) : Inf32
+    epochsWithoutImprovement = 0
+
+    for epoch in 1:maxEpochs
+        # Parada por error mínimo o parada temprana
+        if currentTrainLoss <= minLoss || epochsWithoutImprovement >= maxEpochsVal
+            break
+        end
+
+        # Entrenamiento
+        Flux.train!(loss, ann, [(X_train, Y_train)], opt_state)
+        
+        # Actualizar historiales
+        currentTrainLoss = Float32(loss(ann, X_train, Y_train))
+        push!(trainLosses, currentTrainLoss)
+
+        if !isnothing(X_val)
+            currentValLoss = Float32(loss(ann, X_val, Y_val))
+            push!(valLosses, currentValLoss)
+            
+            # Lógica de Early Stopping
+            if currentValLoss < bestValLoss
+                bestValLoss = currentValLoss
+                bestAnn = deepcopy(ann)
+                epochsWithoutImprovement = 0
+            else
+                epochsWithoutImprovement += 1
+            end
+        end
+
+        if !isnothing(X_test)
+            push!(testLosses, Float32(loss(ann, X_test, Y_test)))
+        end
+    end
+    
+    # Si hubo validación, devolvemos la mejor; si no, la última
+    redADevolver = isnothing(X_val) ? ann : bestAnn
+    return (redADevolver, trainLosses, valLosses, testLosses) 
+end;
+
+function trainClassANN(topology::AbstractArray{<:Int,1},
+    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
+    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}} = 
+        (Array{eltype(trainingDataset[1]),2}(undef,0,size(trainingDataset[1],2)), falses(0)),
+    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}} = 
+        (Array{eltype(trainingDataset[1]),2}(undef,0,size(trainingDataset[1],2)), falses(0)),
+    transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01, 
+    maxEpochsVal::Int=20)
+
+    # Aplicamos reshape a los targets de los 3 conjuntos para convertirlos en matrices (N, 1)
+    trainingDatasetMat   = (trainingDataset[1],   reshape(trainingDataset[2],   :, 1))
+    validationDatasetMat = (validationDataset[1], reshape(validationDataset[2], :, 1))
+    testDatasetMat       = (testDataset[1],       reshape(testDataset[2],       :, 1))
+
+    # Llamamos a la función principal pasándole los nuevos datasets en formato matriz
+    return trainClassANN(topology, trainingDatasetMat;
+        validationDataset=validationDatasetMat,
+        testDataset=testDatasetMat,
+        transferFunctions=transferFunctions,
+        maxEpochs=maxEpochs,
+        minLoss=minLoss,
+        learningRate=learningRate,
+        maxEpochsVal=maxEpochsVal)
+end

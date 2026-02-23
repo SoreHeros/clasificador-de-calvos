@@ -408,3 +408,214 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
         learningRate=learningRate,
         maxEpochsVal=maxEpochsVal)
 end
+
+# EJERCICIO 4
+
+function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
+    @assert length(outputs) == length(targets) "Los vectores deben tener la misma longitud"
+    
+    TP = sum(outputs .& targets)
+    TN = sum((.!outputs) .& (.!targets))
+    FP = sum(outputs .& (.!targets))
+    FN = sum((.!outputs) .& targets)
+    
+    total = TP + TN + FP + FN
+    
+    # Precisión (accuracy)
+    acc = (TP + TN) / total
+    
+    # Tasa de error
+    errorRate = (FP + FN) / total
+    
+    # Sensibilidad (recall) - manejar caso especial
+    if TP + FN == 0
+        recall = 1.0
+    else
+        recall = TP / (TP + FN)
+    end
+    
+    # Especificidad (specificity) - manejar caso especial
+    if TN + FP == 0
+        specificity = 1.0
+    else
+        specificity = TN / (TN + FP)
+    end
+    
+    # Valor predictivo positivo (precision) - manejar caso especial
+    if TP + FP == 0
+        precision = 1.0
+    else
+        precision = TP / (TP + FP)
+    end
+    
+    # Valor predictivo negativo (NPV) - manejar caso especial
+    if TN + FN == 0
+        NPV = 1.0
+    else
+        NPV = TN / (TN + FN)
+    end
+    
+    # F1-score - manejar caso especial
+    if precision + recall == 0
+        F1 = 0.0
+    else
+        F1 = 2 * (precision * recall) / (precision + recall)
+    end
+    
+    # Matriz de confusión según el PDF: [TN FP; FN TP]
+    # Es decir:
+    # - Fila 1: Negativos reales (TN, FP)
+    # - Fila 2: Positivos reales (FN, TP)
+    confMatrix = [TN FP; FN TP]
+    
+    return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix)
+end
+
+function confusionMatrix(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
+    return confusionMatrix(classifyOutputs(outputs; threshold=threshold), targets)
+end
+
+function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    @assert size(outputs) == size(targets) "Las matrices deben tener las mismas dimensiones"
+    @assert size(outputs, 2) == size(targets, 2) "El número de clases debe ser el mismo"
+    
+    nClasses = size(outputs, 2)
+    
+    if nClasses == 1
+        # Caso binario: convertir a vectores y llamar a la versión 1D
+        return confusionMatrix(vec(outputs), vec(targets))
+    end
+    
+    # Calcular matriz de confusión: filas = clase real, columnas = clase predicha
+    targets_float = Float64.(targets)
+    outputs_float = Float64.(outputs)
+    confMatrix_counts = round.(Int, targets_float' * outputs_float)
+    
+    # Calcular precisión global (accuracy)
+    total = size(outputs, 1)
+    correctos = sum(confMatrix_counts[i, i] for i in 1:nClasses)
+    acc = correctos / total
+    errorRate = 1 - acc
+    
+    # Vectores para almacenar métricas por clase
+    recall_vec = zeros(nClasses)
+    specificity_vec = zeros(nClasses)
+    precision_vec = zeros(nClasses)
+    NPV_vec = zeros(nClasses)
+    F1_vec = zeros(nClasses)
+    
+    # Calcular métricas para cada clase
+    for k in 1:nClasses
+        VP = confMatrix_counts[k, k]
+        FN = sum(confMatrix_counts[k, :]) - VP
+        FP = sum(confMatrix_counts[:, k]) - VP
+        VN = total - (VP + FN + FP)
+        
+        # Sensibilidad (recall) para clase k
+        if VP + FN == 0
+            recall_vec[k] = 1.0
+        else
+            recall_vec[k] = VP / (VP + FN)
+        end
+        
+        # Especificidad para clase k
+        if VN + FP == 0
+            specificity_vec[k] = 1.0
+        else
+            specificity_vec[k] = VN / (VN + FP)
+        end
+        
+        # Valor predictivo positivo (precision) para clase k
+        if VP + FP == 0
+            precision_vec[k] = 1.0
+        else
+            precision_vec[k] = VP / (VP + FP)
+        end
+        
+        # Valor predictivo negativo (NPV) para clase k
+        if VN + FN == 0
+            NPV_vec[k] = 1.0
+        else
+            NPV_vec[k] = VN / (VN + FN)
+        end
+        
+        # F1-score para clase k
+        if precision_vec[k] + recall_vec[k] == 0
+            F1_vec[k] = 0.0
+        else
+            F1_vec[k] = 2 * (precision_vec[k] * recall_vec[k]) / (precision_vec[k] + recall_vec[k])
+        end
+    end
+    
+    # Calcular pesos para weighted (número de instancias por clase)
+    class_weights = sum(targets, dims=1)
+    class_weights = vec(class_weights)
+    total_instances = sum(class_weights)
+    
+    if weighted
+        # Media ponderada por el número de instancias de cada clase
+        recall = sum(recall_vec .* class_weights) / total_instances
+        specificity = sum(specificity_vec .* class_weights) / total_instances
+        precision = sum(precision_vec .* class_weights) / total_instances
+        NPV = sum(NPV_vec .* class_weights) / total_instances
+        F1 = sum(F1_vec .* class_weights) / total_instances
+        
+        # Devolver la matriz de conteos (enteros)
+        return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_counts)
+    else
+        # Media aritmética (macro)
+        recall = mean(recall_vec)
+        specificity = mean(specificity_vec)
+        precision = mean(precision_vec)
+        NPV = mean(NPV_vec)
+        F1 = mean(F1_vec)
+        
+        # Crear matriz normalizada para devolver
+        confMatrix_norm = zeros(Float64, nClasses, nClasses)
+        row_sums = sum(confMatrix_counts, dims=2)
+        for i in 1:nClasses
+            if row_sums[i] > 0
+                confMatrix_norm[i, :] = confMatrix_counts[i, :] ./ row_sums[i]
+            end
+        end
+        
+        return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_norm)
+    end
+end
+
+function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5, weighted::Bool=true)
+    return confusionMatrix(classifyOutputs(outputs; threshold=threshold), targets; weighted=weighted)
+end
+
+function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}, classes::AbstractArray{<:Any,1}; weighted::Bool=true)
+    @assert length(outputs) == length(targets) "Los vectores deben tener la misma longitud"
+    
+    nClasses = length(classes)
+    nPatterns = length(outputs)
+    
+    # Crear matrices one-hot para outputs y targets
+    outputs_onehot = falses(nPatterns, nClasses)
+    targets_onehot = falses(nPatterns, nClasses)
+    
+    # Mapear clases a índices
+    class_to_idx = Dict(classes[i] => i for i in eachindex(classes))
+    
+    # Rellenar matrices one-hot
+    for i in eachindex(outputs, targets)
+        if haskey(class_to_idx, outputs[i])
+            outputs_onehot[i, class_to_idx[outputs[i]]] = true
+        end
+        if haskey(class_to_idx, targets[i])
+            targets_onehot[i, class_to_idx[targets[i]]] = true
+        end
+    end
+    
+    # Llamar a la versión para matrices booleanas
+    # Esta llamada ya devuelve la tupla completa con las métricas calculadas
+    return confusionMatrix(outputs_onehot, targets_onehot; weighted=weighted)
+end
+
+function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
+    classes = unique(vcat(outputs, targets))
+    return confusionMatrix(outputs, targets, classes; weighted=weighted)
+end

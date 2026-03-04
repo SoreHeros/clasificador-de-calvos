@@ -220,39 +220,39 @@ println("="^70)
         targets = Bool[1, 0, 1, 0, 1, 1]
 
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets)
-        
+
         # Verificar métricas
         @test isapprox(acc, 0.5)
         @test isapprox(errorRate, 0.5)
         @test isapprox(recall, 0.5)
         @test isapprox(specificity, 0.5)
-        @test isapprox(precision, 2/3)
-        @test isapprox(NPV, 1/3)
-        @test isapprox(F1, 2*(2/3*0.5)/(2/3+0.5))
-        
+        @test isapprox(precision, 2 / 3)
+        @test isapprox(NPV, 1 / 3)
+        @test isapprox(F1, 2 * (2 / 3 * 0.5) / (2 / 3 + 0.5))
+
         # Matriz de confusión según PDF: [TN FP; FN TP]
         # TN = 1, FP = 1, FN = 2, TP = 2
         expected_matrix = [1 1; 2 2]  # [TN FP; FN TP]
         @test confMatrix == expected_matrix
-        
+
         # Test 2: Todos correctos
         outputs = Bool[1, 1, 0, 0]
         targets = Bool[1, 1, 0, 0]
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets)
-        
+
         @test isapprox(acc, 1.0)
         @test isapprox(errorRate, 0.0)
         @test confMatrix == [2 0; 0 2]  # [TN=2, FP=0; FN=0, TP=2]
-        
+
         # Test 3: Todos incorrectos
         outputs = Bool[1, 1, 0, 0]
         targets = Bool[0, 0, 1, 1]
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets)
-        
+
         @test isapprox(acc, 0.0)
         @test isapprox(errorRate, 1.0)
         @test confMatrix == [0 2; 2 0]  # [TN=0, FP=2; FN=2, TP=0]
-        
+
         println(" ✓ confusionMatrix binario 1D (Boolean) correcto")
     end
 
@@ -260,24 +260,24 @@ println("="^70)
         # Test con threshold por defecto (0.5)
         outputs = [0.2, 0.7, 0.3, 0.9, 0.4]
         targets = Bool[1, 1, 0, 1, 0]
-        
+
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets)
-        
+
         @test isapprox(acc, 0.8)
-        @test isapprox(recall, 2/3)
+        @test isapprox(recall, 2 / 3)
         @test isapprox(specificity, 1.0)
         @test confMatrix == [2 0; 1 2]  # [TN=2, FP=0; FN=1, TP=2]
-        
+
         # Test con threshold que cambia clasificación (0.8)
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets; threshold=0.8)
-        
+
         # Clasificados: [0,0,0,1,0]
         # TP: 1, FN: 2, TN: 2, FP: 0
         expected2 = [2 0; 2 1]  # [TN=2, FP=0; FN=2, TP=1]
-        
+
         @test isapprox(acc, 0.6)
         @test confMatrix == expected2
-        
+
         println(" ✓ confusionMatrix binario 1D (Real con threshold) correcto")
     end
 
@@ -285,15 +285,15 @@ println("="^70)
         # Caso binario (1 columna)
         outputs = Bool[1; 1; 0; 0; 1; 0]  # Matriz 6x1
         targets = Bool[1; 0; 1; 0; 1; 1]  # Matriz 6x1
-        
+
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets)
-        
+
         @test isapprox(acc, 0.5)
         @test confMatrix == [1 1; 2 2]  # [TN=1, FP=1; FN=2, TP=2]
-        
+
         println(" ✓ confusionMatrix binario 2D correcto")
     end
-    
+
     @testset "confusionMatrix - Multiclase 2D (Boolean)" begin
         # 9 patrones, 3 clases
         outputs = Bool[
@@ -307,7 +307,7 @@ println("="^70)
             0 0 1;  # patrón 8: clase 3
             0 0 1   # patrón 9: clase 3
         ]
-        
+
         targets = Bool[
             1 0 0;  # patrón 1: clase 1
             0 1 0;  # patrón 2: clase 2
@@ -319,37 +319,37 @@ println("="^70)
             0 1 0;  # patrón 8: clase 2
             0 0 1   # patrón 9: clase 3
         ]
-        
+
         # Test sin normalizar (weighted=true - por defecto)
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets; weighted=true)
-        
+
         expected_matrix = [
             1 1 1;
             1 1 1;
             1 1 1
         ]
-        
-        @test isapprox(acc, 3/9)  # 3 correctos / 9 total = 1/3
-        @test isapprox(errorRate, 6/9)  # 6 incorrectos / 9 total = 2/3
-        @test isapprox(recall, 1/3)  # Media ponderada de recalls por clase
-        @test isapprox(specificity, 2/3)
-        @test isapprox(precision, 1/3)
-        @test isapprox(NPV, 2/3)
-        @test isapprox(F1, 1/3)
+
+        @test isapprox(acc, 3 / 9)  # 3 correctos / 9 total = 1/3
+        @test isapprox(errorRate, 6 / 9)  # 6 incorrectos / 9 total = 2/3
+        @test isapprox(recall, 1 / 3)  # Media ponderada de recalls por clase
+        @test isapprox(specificity, 2 / 3)
+        @test isapprox(precision, 1 / 3)
+        @test isapprox(NPV, 2 / 3)
+        @test isapprox(F1, 1 / 3)
         @test confMatrix == expected_matrix
-        
+
         # Test con normalización por filas (weighted=false)
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_norm) = confusionMatrix(outputs, targets; weighted=false)
-        
+
         # La matriz normalizada debe tener 1/3 en cada posición
         expected_norm = [
             1/3 1/3 1/3;
             1/3 1/3 1/3;
             1/3 1/3 1/3
         ]
-        
+
         @test all(isapprox.(confMatrix_norm, expected_norm, atol=1e-10))
-        
+
         println(" ✓ confusionMatrix multiclase 2D (Boolean) correcto")
     end
 
@@ -366,7 +366,7 @@ println("="^70)
             0.2 0.3 1.1;  # patrón 8: clase 3
             0.3 0.4 1.0   # patrón 9: clase 3
         ]
-        
+
         targets = Bool[
             1 0 0;  # patrón 1: clase 1
             0 1 0;  # patrón 2: clase 2
@@ -378,20 +378,20 @@ println("="^70)
             0 1 0;  # patrón 8: clase 2
             0 0 1   # patrón 9: clase 3
         ]
-        
+
         # Test con threshold por defecto (usando argmax)
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets; weighted=true)
-        
+
         expected_matrix = [
             1 1 1;
             1 1 1;
             1 1 1
         ]
-        
-        @test isapprox(acc, 3/9)
-        @test isapprox(errorRate, 6/9)
+
+        @test isapprox(acc, 3 / 9)
+        @test isapprox(errorRate, 6 / 9)
         @test confMatrix == expected_matrix
-        
+
         println(" ✓ confusionMatrix multiclase 2D (Real con threshold) correcto")
     end
 
@@ -400,31 +400,31 @@ println("="^70)
         outputs = ["gato", "perro", "pájaro", "gato", "perro", "pájaro", "gato", "perro", "pájaro"]
         targets = ["gato", "perro", "pájaro", "perro", "pájaro", "gato", "pájaro", "gato", "perro"]
         classes = ["gato", "perro", "pájaro"]
-        
+
         # Test sin normalizar
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets, classes; weighted=true)
-        
+
         expected_matrix = [
             1 1 1;
             1 1 1;
             1 1 1
         ]
-        
-        @test isapprox(acc, 3/9)
-        @test isapprox(errorRate, 6/9)
+
+        @test isapprox(acc, 3 / 9)
+        @test isapprox(errorRate, 6 / 9)
         @test confMatrix == expected_matrix
-        
+
         # Test con normalización
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_norm) = confusionMatrix(outputs, targets, classes; weighted=false)
-        
+
         expected_norm = [
             1/3 1/3 1/3;
             1/3 1/3 1/3;
             1/3 1/3 1/3
         ]
-        
+
         @test all(isapprox.(confMatrix_norm, expected_norm, atol=1e-10))
-        
+
         println(" ✓ confusionMatrix vectores Any (con clases explícitas) correcto")
     end
 
@@ -432,21 +432,21 @@ println("="^70)
         # Datos de ejemplo con strings (clases se extraen automáticamente)
         outputs = ["gato", "perro", "pájaro", "gato", "perro", "pájaro", "gato", "perro", "pájaro"]
         targets = ["gato", "perro", "pájaro", "perro", "pájaro", "gato", "pájaro", "gato", "perro"]
-        
+
         # Test sin normalizar
         (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = confusionMatrix(outputs, targets; weighted=true)
-        
+
         expected_matrix = [
             1 1 1;
             1 1 1;
             1 1 1
         ]
-        
-        @test isapprox(acc, 3/9)
-        @test isapprox(errorRate, 6/9)
+
+        @test isapprox(acc, 3 / 9)
+        @test isapprox(errorRate, 6 / 9)
         @test confMatrix == expected_matrix
         @test size(confMatrix) == (3, 3)
-        
+
         println(" ✓ confusionMatrix vectores Any (clases automáticas) correcto")
     end
 end
@@ -611,79 +611,113 @@ inputs = convert(Array{Float32,2}, dataset[:, 1:4])
     # ==================== TESTS DEL PROFESOR PARA EJERCICIO 4 ====================
     @testset "confusionMatrix - Tests del profesor" begin
         # Test 1: Binario con vector booleano
-        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = 
-            confusionMatrix(sin.(1:8).>=0, [falses(4); trues(4)])
-        
+        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) =
+            confusionMatrix(sin.(1:8) .>= 0, [falses(4); trues(4)])
+
         @test isapprox(acc, 0.375)
-        @test isapprox(errorRate, 1-0.375)
+        @test isapprox(errorRate, 1 - 0.375)
         @test isapprox(recall, 0.5)
         @test isapprox(specificity, 0.25)
         @test isapprox(precision, 0.4)
-        @test isapprox(NPV, 1/3.)
-        @test isapprox(F1, 4/9.)
+        @test isapprox(NPV, 1 / 3.)
+        @test isapprox(F1, 4 / 9.)
         @test confMatrix == [1 3; 2 2]
-        
+
         # Test 2: Binario con vector real y threshold
-        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = 
+        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) =
             confusionMatrix(sin.(1:8), [falses(4); trues(4)]; threshold=0.9)
-        
+
         @test isapprox(acc, 0.5)
         @test isapprox(errorRate, 0.5)
         @test isapprox(recall, 0.25)
         @test isapprox(specificity, 0.75)
         @test isapprox(precision, 0.5)
         @test isapprox(NPV, 0.5)
-        @test isapprox(F1, 1/3.)
+        @test isapprox(F1, 1 / 3.)
         @test confMatrix == [3 1; 3 1]
-        
+
         # Test 3: Multiclase con matrices booleanas (9 patrones, 3 clases)
-        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = 
+        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) =
             confusionMatrix(
                 Bool[1 0 0; 1 0 0; 1 0 0; 0 1 0; 0 1 0; 0 1 0; 0 0 1; 0 0 1; 0 0 1],
                 Bool[1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0; 0 0 1];
                 weighted=true)
-        
-        @test isapprox(acc, 1/3.)
-        @test isapprox(errorRate, 2/3.)
-        @test isapprox(recall, 1/3.)
-        @test isapprox(specificity, 2/3.)
-        @test isapprox(precision, 1/3.)
-        @test isapprox(NPV, 2/3.)
-        @test isapprox(F1, 1/3.)
+
+        @test isapprox(acc, 1 / 3.)
+        @test isapprox(errorRate, 2 / 3.)
+        @test isapprox(recall, 1 / 3.)
+        @test isapprox(specificity, 2 / 3.)
+        @test isapprox(precision, 1 / 3.)
+        @test isapprox(NPV, 2 / 3.)
+        @test isapprox(F1, 1 / 3.)
         @test confMatrix == [1 1 1; 1 1 1; 1 1 1]
-        
+
         # Test 4: Multiclase con matrices reales
-        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = 
+        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) =
             confusionMatrix(
                 Float64[1 0 0; 1 0 0; 1 0 0; 0 1 0; 0 1 0; 0 1 0; 0 0 1; 0 0 1; 0 0 1] .+ 1,
                 Bool[1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0; 0 0 1];
                 weighted=true)
-        
-        @test isapprox(acc, 1/3.)
-        @test isapprox(errorRate, 2/3.)
-        @test isapprox(recall, 1/3.)
-        @test isapprox(specificity, 2/3.)
-        @test isapprox(precision, 1/3.)
-        @test isapprox(NPV, 2/3.)
-        @test isapprox(F1, 1/3.)
+
+        @test isapprox(acc, 1 / 3.)
+        @test isapprox(errorRate, 2 / 3.)
+        @test isapprox(recall, 1 / 3.)
+        @test isapprox(specificity, 2 / 3.)
+        @test isapprox(precision, 1 / 3.)
+        @test isapprox(NPV, 2 / 3.)
+        @test isapprox(F1, 1 / 3.)
         @test confMatrix == [1 1 1; 1 1 1; 1 1 1]
-        
+
         # Test 5: Con dataset Iris (vectores de strings)
         dataset = readdlm(joinpath(@__DIR__, "iris.data"), ',')
         targets = dataset[:, 5]
-        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) = 
+        (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix) =
             confusionMatrix(repeat(unique(targets), 50), targets)
-        
-        @test isapprox(acc, 1/3.)
-        @test isapprox(errorRate, 2/3.)
-        @test isapprox(recall, 1/3.)
-        @test isapprox(specificity, 2/3.)
-        @test isapprox(precision, 1/3.)
-        @test isapprox(NPV, 2/3.)
-        @test isapprox(F1, 1/3.)
+
+        @test isapprox(acc, 1 / 3.)
+        @test isapprox(errorRate, 2 / 3.)
+        @test isapprox(recall, 1 / 3.)
+        @test isapprox(specificity, 2 / 3.)
+        @test isapprox(precision, 1 / 3.)
+        @test isapprox(NPV, 2 / 3.)
+        @test isapprox(F1, 1 / 3.)
         @test confMatrix == [17 17 16; 17 16 17; 16 17 17]
-        
+
         println(" ✓ confusionMatrix - Todos los tests del profesor correctos")
+    end
+
+    # 1. Test de Clasificación Binaria (Versión Bool, 1)
+    @testset "trainClassDoME - Tests del profesor" begin
+        # Reloading dataset since inputs was modified in place by earlier tests
+        inputs = convert(Array{Float32,2}, dataset[:, 1:4])
+        seed!(1)
+        # Se entrena para detectar solo "Iris-setosa". 
+        # Debe devolver la certidumbre numérica (Float64) [cite: 314-315, 656].
+        outputs2Classes_num = trainClassDoME((inputs[1:100, :], targets[1:100] .== "Iris-setosa"), inputs[[1], :], 20)
+        @assert(isapprox(outputs2Classes_num[1], 1.0329783807313904))
+        println("Test 1 (Binario Numérico): PASADO")
+
+
+        # 2. Test Multiclase con Matriz (Versión Bool, 2)
+        # Se usa oneHotEncoding para forzar la entrada de una matriz de booleanos[cite: 356, 358].
+        # Debe devolver una matriz de certidumbres de dimensiones (1, 3) [cite: 341-342, 659].
+        outputs3Classes_mat = trainClassDoME((inputs[1:149, :], oneHotEncoding(targets[1:149])), inputs[[150], :], 20)
+        @assert(all(isapprox.(outputs3Classes_mat, [-1.0634799989028503 -0.4286532773153766 0.11366448575221406]; rtol=1e-3)))
+        println("Test 2 (Multiclase Matriz): PASADO")
+
+
+        # 3. Test de Etiquetas Genéricas (Versión Any, 1 - Caso 2 clases)
+        # Se pasan las etiquetas originales. El sistema debe aplicar el umbral 0 y devolver la etiqueta [cite: 361-363, 660-661].
+        outputs2Classes_any = trainClassDoME((inputs[1:98, :], targets[1:98]), inputs[99:100, :], 20)
+        @assert(all(x -> x == "Iris-versicolor", outputs2Classes_any))
+        println("Test 3 (Cualquier tipo - 2 clases): PASADO")
+
+
+        # 4. Test de Etiquetas Genéricas (Versión Any, 1 - Caso Multiclase)
+        # Mismo procedimiento para 3 clases. Debe mapear el resultado a "Iris-virginica" [cite: 350, 375-377, 662].
+        outputs3Classes_any = trainClassDoME((inputs[1:149, :], targets[1:149]), inputs[[150], :], 20)
+        @assert(outputs3Classes_any[1] == "Iris-virginica")
+        println("Test 4 (Cualquier tipo - Multiclase): PASADO")
     end
 end
 

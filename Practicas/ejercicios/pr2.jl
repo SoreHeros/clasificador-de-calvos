@@ -2,6 +2,7 @@ using Statistics
 using Flux
 using Flux.Losses
 using Random
+using SymDoME
 
 # EJERCICIO 2
 
@@ -413,61 +414,61 @@ end
 
 function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     @assert length(outputs) == length(targets) "Los vectores deben tener la misma longitud"
-    
+
     TP = sum(outputs .& targets)
     TN = sum((.!outputs) .& (.!targets))
     FP = sum(outputs .& (.!targets))
     FN = sum((.!outputs) .& targets)
-    
+
     total = TP + TN + FP + FN
-    
+
     # Precisión (accuracy)
     acc = (TP + TN) / total
-    
+
     # Tasa de error
     errorRate = (FP + FN) / total
-    
+
     # Sensibilidad (recall) - manejar caso especial
     if TP + FN == 0
         recall = 1.0
     else
         recall = TP / (TP + FN)
     end
-    
+
     # Especificidad (specificity) - manejar caso especial
     if TN + FP == 0
         specificity = 1.0
     else
         specificity = TN / (TN + FP)
     end
-    
+
     # Valor predictivo positivo (precision) - manejar caso especial
     if TP + FP == 0
         precision = 1.0
     else
         precision = TP / (TP + FP)
     end
-    
+
     # Valor predictivo negativo (NPV) - manejar caso especial
     if TN + FN == 0
         NPV = 1.0
     else
         NPV = TN / (TN + FN)
     end
-    
+
     # F1-score - manejar caso especial
     if precision + recall == 0
         F1 = 0.0
     else
         F1 = 2 * (precision * recall) / (precision + recall)
     end
-    
+
     # Matriz de confusión según el PDF: [TN FP; FN TP]
     # Es decir:
     # - Fila 1: Negativos reales (TN, FP)
     # - Fila 2: Positivos reales (FN, TP)
     confMatrix = [TN FP; FN TP]
-    
+
     return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix)
 end
 
@@ -478,67 +479,67 @@ end
 function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     @assert size(outputs) == size(targets) "Las matrices deben tener las mismas dimensiones"
     @assert size(outputs, 2) == size(targets, 2) "El número de clases debe ser el mismo"
-    
+
     nClasses = size(outputs, 2)
-    
+
     if nClasses == 1
         # Caso binario: convertir a vectores y llamar a la versión 1D
         return confusionMatrix(vec(outputs), vec(targets))
     end
-    
+
     # Calcular matriz de confusión: filas = clase real, columnas = clase predicha
     targets_float = Float64.(targets)
     outputs_float = Float64.(outputs)
     confMatrix_counts = round.(Int, targets_float' * outputs_float)
-    
+
     # Calcular precisión global (accuracy)
     total = size(outputs, 1)
     correctos = sum(confMatrix_counts[i, i] for i in 1:nClasses)
     acc = correctos / total
     errorRate = 1 - acc
-    
+
     # Vectores para almacenar métricas por clase
     recall_vec = zeros(nClasses)
     specificity_vec = zeros(nClasses)
     precision_vec = zeros(nClasses)
     NPV_vec = zeros(nClasses)
     F1_vec = zeros(nClasses)
-    
+
     # Calcular métricas para cada clase
     for k in 1:nClasses
         VP = confMatrix_counts[k, k]
         FN = sum(confMatrix_counts[k, :]) - VP
         FP = sum(confMatrix_counts[:, k]) - VP
         VN = total - (VP + FN + FP)
-        
+
         # Sensibilidad (recall) para clase k
         if VP + FN == 0
             recall_vec[k] = 1.0
         else
             recall_vec[k] = VP / (VP + FN)
         end
-        
+
         # Especificidad para clase k
         if VN + FP == 0
             specificity_vec[k] = 1.0
         else
             specificity_vec[k] = VN / (VN + FP)
         end
-        
+
         # Valor predictivo positivo (precision) para clase k
         if VP + FP == 0
             precision_vec[k] = 1.0
         else
             precision_vec[k] = VP / (VP + FP)
         end
-        
+
         # Valor predictivo negativo (NPV) para clase k
         if VN + FN == 0
             NPV_vec[k] = 1.0
         else
             NPV_vec[k] = VN / (VN + FN)
         end
-        
+
         # F1-score para clase k
         if precision_vec[k] + recall_vec[k] == 0
             F1_vec[k] = 0.0
@@ -546,12 +547,12 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             F1_vec[k] = 2 * (precision_vec[k] * recall_vec[k]) / (precision_vec[k] + recall_vec[k])
         end
     end
-    
+
     # Calcular pesos para weighted (número de instancias por clase)
     class_weights = sum(targets, dims=1)
     class_weights = vec(class_weights)
     total_instances = sum(class_weights)
-    
+
     if weighted
         # Media ponderada por el número de instancias de cada clase
         recall = sum(recall_vec .* class_weights) / total_instances
@@ -559,7 +560,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         precision = sum(precision_vec .* class_weights) / total_instances
         NPV = sum(NPV_vec .* class_weights) / total_instances
         F1 = sum(F1_vec .* class_weights) / total_instances
-        
+
         # Devolver la matriz de conteos (enteros)
         return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_counts)
     else
@@ -569,7 +570,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         precision = mean(precision_vec)
         NPV = mean(NPV_vec)
         F1 = mean(F1_vec)
-        
+
         # Crear matriz normalizada para devolver
         confMatrix_norm = zeros(Float64, nClasses, nClasses)
         row_sums = sum(confMatrix_counts, dims=2)
@@ -578,7 +579,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
                 confMatrix_norm[i, :] = confMatrix_counts[i, :] ./ row_sums[i]
             end
         end
-        
+
         return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_norm)
     end
 end
@@ -588,34 +589,183 @@ function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArra
 end
 
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}, classes::AbstractArray{<:Any,1}; weighted::Bool=true)
-    @assert length(outputs) == length(targets) "Los vectores deben tener la misma longitud"
-    
-    nClasses = length(classes)
-    nPatterns = length(outputs)
-    
-    # Crear matrices one-hot para outputs y targets
-    outputs_onehot = falses(nPatterns, nClasses)
-    targets_onehot = falses(nPatterns, nClasses)
-    
-    # Mapear clases a índices
-    class_to_idx = Dict(classes[i] => i for i in eachindex(classes))
-    
-    # Rellenar matrices one-hot
-    for i in eachindex(outputs, targets)
-        if haskey(class_to_idx, outputs[i])
-            outputs_onehot[i, class_to_idx[outputs[i]]] = true
-        end
-        if haskey(class_to_idx, targets[i])
-            targets_onehot[i, class_to_idx[targets[i]]] = true
-        end
-    end
-    
-    # Llamar a la versión para matrices booleanas
-    # Esta llamada ya devuelve la tupla completa con las métricas calculadas
+    # 1. Línea de programación defensiva obligatoria 
+    @assert(all([in(label, classes) for label in vcat(targets, outputs)]))
+
+    # 2. Transformamos a matrices one-hot SIN bucles como pide el enunciado 
+    outputs_onehot = oneHotEncoding(outputs, classes)
+    targets_onehot = oneHotEncoding(targets, classes)
+
+    # 3. Llamamos a la versión de matrices booleanas 
     return confusionMatrix(outputs_onehot, targets_onehot; weighted=weighted)
 end
 
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
-    classes = unique(vcat(outputs, targets))
+    # Calculamos las clases únicas
+    classes = unique(vcat(targets, outputs))
+    # Llamamos a la versión anterior
     return confusionMatrix(outputs, targets, classes; weighted=weighted)
 end
+
+function trainClassDoME(trainingDataset::Tuple{AbstractArray{<:Real,2},AbstractArray{Bool,1}}, testInputs::AbstractArray{<:Real,2}, maximumNodes::Int)
+    entradas = Float64.(trainingDataset[1])
+    targets = Vector{Bool}(trainingDataset[2])
+    testEntradas = Float64.(testInputs)
+
+    Random.seed!(1)
+    (modelo, _, _, _) = dome(entradas, targets; maximumNodes=maximumNodes)
+
+    testOutputs = evaluateTree(modelo, testEntradas)
+
+    if isa(testOutputs, Real)
+        testOutputs = repeat([testOutputs], size(testEntradas, 1))
+    end
+
+    return testOutputs
+end;
+
+function trainClassDoME(trainingDataset::Tuple{AbstractArray{<:Real,2},AbstractArray{Bool,2}}, testInputs::AbstractArray{<:Real,2}, maximumNodes::Int)
+    Random.seed!(1)
+    entradas = Float64.(trainingDataset[1])
+    targets = trainingDataset[2]
+    testEntradas = Float64.(testInputs)
+    numClasses = size(targets, 2)
+
+    if (numClasses == 1)
+        # Llamamos a la versión binaria (vector)
+        resultado_vector = trainClassDoME((entradas, vec(targets)), testEntradas, maximumNodes)
+        # Lo transformamos en matriz (N x 1) antes de devolverlo
+        return reshape(resultado_vector, :, 1)
+    else
+        # 1. Crear matriz de resultados
+        salidasTestMatriz = zeros(Float64, size(testEntradas, 1), numClasses)
+        # 2. Bucle para cada clase 
+        for i in 1:numClasses
+            # 3. Llamada a la versión binaria con la columna i como vector 
+            # 4. Asignación a la columna correspondiente 
+            salidasTestMatriz[:, i] .= trainClassDoME((entradas, targets[:, i]), testEntradas, maximumNodes)
+        end
+        return salidasTestMatriz
+    end
+end;
+
+function trainClassDoME(trainingDataset::Tuple{AbstractArray{<:Real,2},AbstractArray{<:Any,1}}, testInputs::AbstractArray{<:Real,2}, maximumNodes::Int)
+    classes = unique(trainingDataset[2])
+    # Creamos el vector con el mismo tipo de datos
+    testOutputs = Array{eltype(trainingDataset[2]),1}(undef, size(testInputs, 1))
+
+    # Obtenemos la matriz de certidumbres llamando a nuestra versión anterior usando oneHotEncoding
+    testOutputsDOME = trainClassDoME(
+        (trainingDataset[1], oneHotEncoding(trainingDataset[2], classes)),
+        testInputs,
+        maximumNodes
+    )
+
+    testOutputsBool = classifyOutputs(testOutputsDOME; threshold=0)
+
+    if length(classes) <= 2
+        # Caso 1-2 clases: Sin bucles
+        # Primero convertimos la matriz de una columna en un vector para facilitar el mapeo
+        testOutputsBool = vec(testOutputsBool)
+
+        testOutputs[testOutputsBool] .= classes[1]
+
+        if length(classes) == 2
+            testOutputs[.!testOutputsBool] .= classes[2]
+        end
+    else
+        # Caso > 2 clases: El bucle "Uno contra todos"
+        for numClass in 1:length(classes)
+            testOutputs[testOutputsBool[:, numClass]] .= classes[numClass]
+        end
+    end
+
+    return testOutputs
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{Bool,2},
+    targets::AbstractArray{Bool,2}; weighted::Bool=true)
+
+
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Real,2},
+    targets::AbstractArray{Bool,2}; weighted::Bool=true)
+
+
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
+    targets::AbstractArray{<:Any,1},
+    classes::AbstractArray{<:Any,1}; weighted::Bool=true)
+
+
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
+    targets::AbstractArray{<:Any,1}; weighted::Bool=true)
+
+
+end;
+
+# ----------------------------------------------------------------------------------------------
+# ------------------------------------- Ejercicio 5 --------------------------------------------
+# ----------------------------------------------------------------------------------------------
+
+using Random
+using Random: seed!
+
+function crossvalidation(N::Int64, k::Int64)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function ANNCrossValidation(topology::AbstractArray{<:Int,1},
+    dataset::Tuple{AbstractArray{<:Real,2},AbstractArray{<:Any,1}},
+    crossValidationIndices::Array{Int64,1};
+    numExecutions::Int=50,
+    transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01, validationRatio::Real=0, maxEpochsVal::Int=20)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+
+# ----------------------------------------------------------------------------------------------
+# ------------------------------------- Ejercicio 6 --------------------------------------------
+# ----------------------------------------------------------------------------------------------
+
+using MLJ
+using LIBSVM, MLJLIBSVMInterface
+using NearestNeighborModels, MLJDecisionTreeInterface
+
+SVMClassifier = MLJ.@load SVC pkg = LIBSVM verbosity = 0
+kNNClassifier = MLJ.@load KNNClassifier pkg = NearestNeighborModels verbosity = 0
+DTClassifier = MLJ.@load DecisionTreeClassifier pkg = DecisionTree verbosity = 0
+
+
+function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dataset::Tuple{AbstractArray{<:Real,2},AbstractArray{<:Any,1}}, crossValidationIndices::Array{Int64,1})
+    #
+    # Codigo a desarrollar
+    #
+end;

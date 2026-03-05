@@ -716,28 +716,49 @@ using Random
 using Random: seed!
 
 function crossvalidation(N::Int64, k::Int64)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    base = repeat(1:k, ceil(Int, N / k))[1:N]
+    return shuffle(base)
+end
 
 function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    N = length(targets)
+    idx_true = findall(targets)
+    idx_false = findall(.!(targets))
+    result = zeros(Int64, N)
+    for indices in (idx_true, idx_false)
+        n_c = length(indices)
+        n_c == 0 && continue
+        folds_c = repeat(1:k, ceil(Int, n_c / k))[1:n_c]
+        shuffle!(Random.GLOBAL_RNG, folds_c)
+        for (i, pos) in enumerate(indices)
+            result[pos] = folds_c[i]
+        end
+    end
+    return result
+end
 
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    if size(targets, 2) == 1
+        return crossvalidation(vec(targets), k)
+    end
+    classes = [findfirst(targets[i, :]) for i in 1:size(targets, 1)]
+    return crossvalidation(classes, k)
+end
 
 function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    N = length(targets)
+    result = zeros(Int64, N)
+    for class in unique(targets)
+        indices = findall(==(class), targets)
+        n_c = length(indices)
+        folds_c = repeat(1:k, ceil(Int, n_c / k))[1:n_c]
+        shuffle!(Random.GLOBAL_RNG, folds_c)
+        for (i, pos) in enumerate(indices)
+            result[pos] = folds_c[i]
+        end
+    end
+    return result
+end
 
 function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     dataset::Tuple{AbstractArray{<:Real,2},AbstractArray{<:Any,1}},

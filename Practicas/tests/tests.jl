@@ -449,6 +449,71 @@ println("="^70)
 
         println(" ✓ confusionMatrix vectores Any (clases automáticas) correcto")
     end
+
+    # ==================== EJERCICIO 5: crossvalidation ====================
+    @testset "crossvalidation(N, k)" begin
+        N, k = 10, 3
+        seed!(1)
+        idx = crossvalidation(N, k)
+        @test length(idx) == N
+        @test all(1 .<= idx .<= k)
+        @test eltype(idx) == Int64
+        # Equilibrio: cada fold entre floor(N/k) y ceil(N/k)
+        for f in 1:k
+            n_f = count(==(f), idx)
+            @test n_f >= div(N, k)
+            @test n_f <= div(N, k) + (N % k > 0 ? 1 : 0) || n_f <= cld(N, k)
+        end
+        seed!(1)
+        idx2 = crossvalidation(N, k)
+        @test idx == idx2
+        println("   ✓ crossvalidation(N, k) correcto")
+    end
+
+    @testset "crossvalidation(targets Bool 1D, k)" begin
+        targets = Bool[1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+        seed!(42)
+        idx = crossvalidation(targets, 2)
+        @test length(idx) == length(targets)
+        @test all(1 .<= idx .<= 2)
+        # Estratificación: en cada fold proporción similar
+        for f in 1:2
+            in_f = idx .== f
+            n_true = count(i -> in_f[i] && targets[i], 1:length(targets))
+            n_fold = count(==(f), idx)
+            @test n_fold >= 4 && n_fold <= 6
+        end
+        println("   ✓ crossvalidation(Bool 1D, k) correcto")
+    end
+
+    @testset "crossvalidation(targets Bool 2D, k)" begin
+        # 6 patrones, 3 clases (one-hot)
+        targets = Bool[
+            1 0 0; 1 0 0;
+            0 1 0; 0 1 0;
+            0 0 1; 0 0 1
+        ]
+        seed!(123)
+        idx = crossvalidation(targets, 2)
+        @test length(idx) == size(targets, 1)
+        @test all(1 .<= idx .<= 2)
+        println("   ✓ crossvalidation(Bool 2D, k) correcto")
+    end
+
+    @testset "crossvalidation(targets Any 1D, k)" begin
+        targets = ["a", "b", "a", "b", "c", "a", "b", "c"]
+        seed!(7)
+        idx = crossvalidation(targets, 3)
+        @test length(idx) == length(targets)
+        @test all(1 .<= idx .<= 3)
+        # Cada clase repartida en varios folds (no todos en el mismo)
+        for c in ["a", "b", "c"]
+            pos = findall(==(c), targets)
+            folds_c = unique(idx[pos])
+            @test length(folds_c) >= 1
+        end
+        println("   ✓ crossvalidation(Any 1D, k) correcto")
+    end
 end
 
 println("\n✓ Todos los tests propios completados correctamente")

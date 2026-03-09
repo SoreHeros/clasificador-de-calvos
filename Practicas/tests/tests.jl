@@ -4,7 +4,7 @@ using Test
 using DelimitedFiles
 using Random: seed!
 
-include("../ejercicios/pr2.jl")
+include("../ejercicios/main.jl")
 
 println("="^70)
 println("EJECUTANDO TESTS PROPIOS")
@@ -501,12 +501,12 @@ println("="^70)
     end
 
     @testset "crossvalidation(targets Any 1D, k)" begin
-        targets = ["a", "b", "a", "b", "c", "a", "b", "c"]
+        # Cada clase debe tener al menos k patrones (k=3)
+        targets = ["a", "b", "a", "b", "c", "a", "b", "c", "c"]
         seed!(7)
         idx = crossvalidation(targets, 3)
         @test length(idx) == length(targets)
         @test all(1 .<= idx .<= 3)
-        # Cada clase repartida en varios folds (no todos en el mismo)
         for c in ["a", "b", "c"]
             pos = findall(==(c), targets)
             folds_c = unique(idx[pos])

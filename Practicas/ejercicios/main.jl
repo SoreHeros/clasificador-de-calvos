@@ -716,48 +716,44 @@ using Random
 using Random: seed!
 
 function crossvalidation(N::Int64, k::Int64)
-    base = repeat(1:k, ceil(Int, N / k))[1:N]
-    return shuffle(base)
+    v = collect(1:k)
+    v = repeat(v, ceil(Int, N / k))
+    v = v[1:N]
+    shuffle!(v)
+    return v
 end
 
 function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
     N = length(targets)
-    idx_true = findall(targets)
-    idx_false = findall(.!(targets))
-    result = zeros(Int64, N)
-    for indices in (idx_true, idx_false)
-        n_c = length(indices)
-        n_c == 0 && continue
-        folds_c = repeat(1:k, ceil(Int, n_c / k))[1:n_c]
-        shuffle!(Random.GLOBAL_RNG, folds_c)
-        for (i, pos) in enumerate(indices)
-            result[pos] = folds_c[i]
-        end
-    end
-    return result
+    @assert N >= k "Las clases deben tener minimo k patrones"
+    v = collect(1:N)
+    positive_in_class = sum(targets)
+    negative_in_class = N - positive_in_class
+    @assert (positive_in_class >= k && negative_in_class >= k) "Las clases deben tener minimo k patrones"
+    v[targets] .= crossvalidation(positive_in_class, k)
+    v[.!targets] .= crossvalidation(negative_in_class, k)
+    return v
 end
 
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
     if size(targets, 2) == 1
         return crossvalidation(vec(targets), k)
     end
-    classes = [findfirst(targets[i, :]) for i in 1:size(targets, 1)]
-    return crossvalidation(classes, k)
+    N, num_classes = size(targets)
+    v = collect(1:N)
+    for class in 1:num_classes
+        boolean_vector = targets[:, class]
+        positive_in_class = sum(boolean_vector)
+        @assert positive_in_class >= k "Las clases deben tener minimo k patrones"
+        v[boolean_vector] .= crossvalidation(positive_in_class, k)
+    end
+    return v
 end
 
 function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
-    N = length(targets)
-    result = zeros(Int64, N)
-    for class in unique(targets)
-        indices = findall(==(class), targets)
-        n_c = length(indices)
-        folds_c = repeat(1:k, ceil(Int, n_c / k))[1:n_c]
-        shuffle!(Random.GLOBAL_RNG, folds_c)
-        for (i, pos) in enumerate(indices)
-            result[pos] = folds_c[i]
-        end
-    end
-    return result
+    classes = unique(targets)
+    targets_onehot = oneHotEncoding(targets, classes)
+    return crossvalidation(targets_onehot, k)
 end
 
 function ANNCrossValidation(topology::AbstractArray{<:Int,1},

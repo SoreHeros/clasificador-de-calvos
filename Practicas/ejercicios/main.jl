@@ -480,7 +480,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
     @assert size(outputs) == size(targets) "Las matrices deben tener las mismas dimensiones"
     @assert size(outputs, 2) == size(targets, 2) "El número de clases debe ser el mismo"
 
-    nClasses = size(outputs, 2)
+    (_, nClasses) = size(targets);
 
     if nClasses == 1
         # Caso binario: convertir a vectores y llamar a la versión 1D
@@ -488,15 +488,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
     end
 
     # Calcular matriz de confusión: filas = clase real, columnas = clase predicha
-    targets_float = Float64.(targets)
-    outputs_float = Float64.(outputs)
-    confMatrix_counts = round.(Int, targets_float' * outputs_float)
-
-    # Calcular precisión global (accuracy)
-    total = size(outputs, 1)
-    correctos = sum(confMatrix_counts[i, i] for i in 1:nClasses)
-    acc = correctos / total
-    errorRate = 1 - acc
+    confMatrix_counts = targets' * outputs
 
     # Vectores para almacenar métricas por clase
     recall_vec = zeros(nClasses)
@@ -505,64 +497,25 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
     NPV_vec = zeros(nClasses)
     F1_vec = zeros(nClasses)
 
-    # Calcular métricas para cada clase
+    # Métricas por clase
     for k in 1:nClasses
-        VP = confMatrix_counts[k, k]
-        FN = sum(confMatrix_counts[k, :]) - VP
-        FP = sum(confMatrix_counts[:, k]) - VP
-        VN = total - (VP + FN + FP)
-
-        # Sensibilidad (recall) para clase k
-        if VP + FN == 0
-            recall_vec[k] = 1.0
-        else
-            recall_vec[k] = VP / (VP + FN)
-        end
-
-        # Especificidad para clase k
-        if VN + FP == 0
-            specificity_vec[k] = 1.0
-        else
-            specificity_vec[k] = VN / (VN + FP)
-        end
-
-        # Valor predictivo positivo (precision) para clase k
-        if VP + FP == 0
-            precision_vec[k] = 1.0
-        else
-            precision_vec[k] = VP / (VP + FP)
-        end
-
-        # Valor predictivo negativo (NPV) para clase k
-        if VN + FN == 0
-            NPV_vec[k] = 1.0
-        else
-            NPV_vec[k] = VN / (VN + FN)
-        end
-
-        # F1-score para clase k
-        if precision_vec[k] + recall_vec[k] == 0
-            F1_vec[k] = 0.0
-        else
-            F1_vec[k] = 2 * (precision_vec[k] * recall_vec[k]) / (precision_vec[k] + recall_vec[k])
-        end
+        (_, _, recall_vec[k], specificity_vec[k], precision_vec[k], NPV_vec[k], F1_vec[k], _) = confusionMatrix(outputs[:,k], targets[:,k]);
     end
 
-    # Calcular pesos para weighted (número de instancias por clase)
-    class_weights = sum(targets, dims=1)
-    class_weights = vec(class_weights)
-    total_instances = sum(class_weights)
-
+    acc = accuracy(outputs, targets);
+    errorRate = 1 - acc;
     if weighted
-        # Media ponderada por el número de instancias de cada clase
-        recall = sum(recall_vec .* class_weights) / total_instances
-        specificity = sum(specificity_vec .* class_weights) / total_instances
-        precision = sum(precision_vec .* class_weights) / total_instances
-        NPV = sum(NPV_vec .* class_weights) / total_instances
-        F1 = sum(F1_vec .* class_weights) / total_instances
+        class_weights = vec(sum(targets, dims=1))
+        total_instances = sum(class_weights)
+        weights = class_weights./total_instances;
+
+        recall = sum(weights .* recall_vec) 
+        specificity = sum(weights .* specificity_vec)
+        precision = sum(weights .* precision_vec)
+        NPV = sum(weights .* NPV_vec) 
+        F1 = sum(weights .* F1_vec) 
 
         # Devolver la matriz de conteos (enteros)
-        return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_counts)
     else
         # Media aritmética (macro)
         recall = mean(recall_vec)
@@ -571,17 +524,9 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         NPV = mean(NPV_vec)
         F1 = mean(F1_vec)
 
-        # Crear matriz normalizada para devolver
-        confMatrix_norm = zeros(Float64, nClasses, nClasses)
-        row_sums = sum(confMatrix_counts, dims=2)
-        for i in 1:nClasses
-            if row_sums[i] > 0
-                confMatrix_norm[i, :] = confMatrix_counts[i, :] ./ row_sums[i]
-            end
-        end
-
-        return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_norm)
     end
+    return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_counts)
+
 end
 
 function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5, weighted::Bool=true)

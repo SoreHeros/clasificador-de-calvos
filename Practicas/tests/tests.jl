@@ -4,7 +4,7 @@ using Test
 using DelimitedFiles
 using Random: seed!
 
-include("../ejercicios/pr2.jl")
+include("../ejercicios/main.jl")
 
 println("="^70)
 println("EJECUTANDO TESTS PROPIOS")

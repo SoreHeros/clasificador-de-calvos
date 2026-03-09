@@ -505,7 +505,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
     NPV_vec = zeros(nClasses)
     F1_vec = zeros(nClasses)
 
-    # Calcular métricas para cada clase
+    # Métricas por clase
     for k in 1:nClasses
         VP = confMatrix_counts[k, k]
         FN = sum(confMatrix_counts[k, :]) - VP
@@ -571,14 +571,10 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         NPV = mean(NPV_vec)
         F1 = mean(F1_vec)
 
-        # Crear matriz normalizada para devolver
-        confMatrix_norm = zeros(Float64, nClasses, nClasses)
-        row_sums = sum(confMatrix_counts, dims=2)
-        for i in 1:nClasses
-            if row_sums[i] > 0
-                confMatrix_norm[i, :] = confMatrix_counts[i, :] ./ row_sums[i]
-            end
-        end
+        # Crear matriz normalizada sin bucle explícito (broadcasting)
+        row_sums = sum(confMatrix_counts, dims=2)          # vector columna
+        row_sums_safe = max.(row_sums, 1)                  # evita división por cero
+        confMatrix_norm = confMatrix_counts ./ row_sums_safe
 
         return (acc, errorRate, recall, specificity, precision, NPV, F1, confMatrix_norm)
     end

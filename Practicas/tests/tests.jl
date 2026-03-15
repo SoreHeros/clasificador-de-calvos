@@ -514,6 +514,20 @@ println("="^70)
         end
         println("   ✓ crossvalidation(Any 1D, k) correcto")
     end
+
+    @testset "ANNCrossValidation" begin
+        #test simple del problema de xor
+        seed!(13)
+        elements = 20
+        inputs = rand(Float32, elements, 2) .* 2.0 .-1.0
+        outputs = [xor(row[1]>0, row[2]>2) for row in eachrow(inputs)]
+        indexes = crossvalidation(outputs, 4)
+        (precision, tasaError, sensibilidad, especificidad, VPP, VPN, F1, confusionMatrixGlobal) = ANNCrossValidation([4], (inputs, outputs), indexes, numExecutions = 5)#4-fold
+        @test confusionMatrixGlobal[1] > 2.5
+        @test confusionMatrixGlobal[2] < 2.5
+        @test confusionMatrixGlobal[3] < 2.5
+        @test confusionMatrixGlobal[4] > 2.5
+    end
 end
 
 println("\n✓ Todos los tests propios completados correctamente")

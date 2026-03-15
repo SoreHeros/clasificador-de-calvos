@@ -709,11 +709,16 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01, validationRatio::Real=0, maxEpochsVal::Int=20)
 
     #Comprobar entradas
-    @assert length(dataset) == length(crossValidationIndices) "Debe de haber un índice por cada elemento de dataset"
+    @assert size(dataset[1], 1) == length(crossValidationIndices) "Debe de haber un índice por cada elemento de dataset"
+    @assert size(dataset[1], 1) == length(dataset[2]) "Debe de haber una salida por cada entrada"
     #Get clases
-    classes = unique(dataset[2])
+    clases = unique(dataset[2])
+    clasesLen = length(clases)
+    if(clasesLen <= 2)
+        clasesLen = 1
+    end    
     #Get encoding
-    encoding = oneHotEncoding(dataset[2], classes)
+    encoding = oneHotEncoding(dataset[2], clases)
     #Get folds
     folds = maximum(crossValidationIndices)
 
@@ -726,14 +731,13 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     VPN = zeros(folds)
     F1 = zeros(folds)
     confusionMatrixGlobal = zeros(Float32, length(clases), length(clases))
-
     for i in 1:folds
             #Separar entrenamiento (y validación) de test
-            entradaEntrenamiento = dataset[1][crossValidationIndices .!= i]
-            salidaDeseadaEntrenamiento = encoding[crossValidationIndices .!= i]
-            entradaTest = dataset[1][crossValidationIndices .== i]
-            salidaDeseadaTest = encoding[crossValidationIndices .== i]
-
+            entradaEntrenamiento = eachrow(dataset[1])[crossValidationIndices .!= i]
+            salidaDeseadaEntrenamiento = eachrow(encoding)[crossValidationIndices .!= i]
+            entradaTest = eachrow(dataset[1])[crossValidationIndices .== i]
+            salidaDeseadaTest = collect(eachrow(encoding)[crossValidationIndices .== i])
+            
             #Inits
             precisionCarry = zeros(numExecutions)
             tasaErrorCarry = zeros(numExecutions)
@@ -743,23 +747,31 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
             VPNCarry = zeros(numExecutions)
             F1Carry = zeros(numExecutions)
             confusionMatrixCarry = Array{Array, 1}(undef, numExecutions)
-
             for j in 1:numExecutions
 
                 #Separar entrenamiento y validación
-                entrenamientoIndices, validationIndices = holdOut(length(entradaEntrenamiento), validationRatio * length(dataset[1]) / lngth(entradaEntrenamiento)) #validationRatio ajustado para que sea sobre el total
-                
+                entrenamientoIndices, validationIndices = holdOut(length(entradaEntrenamiento), validationRatio * length(dataset[2]) / length(entradaEntrenamiento)) #validationRatio ajustado para que sea sobre el total
                 entradaValidation = entradaEntrenamiento[validationIndices]
                 salidaDeseadaValidation = salidaDeseadaEntrenamiento[validationIndices]
                 entradaEntrenamientoMixed = entradaEntrenamiento[entrenamientoIndices]
-                salidaDeseadaEntrenamientoMixed = salidaDeseadaEntrenamiento[entrenamientoIndices]
-
+                salidaDeseadaEntrenamientoMixed = collect(salidaDeseadaEntrenamiento[entrenamientoIndices])
+                entrenamiento = (stack(entradaEntrenamientoMixed)', collect(stack(salidaDeseadaEntrenamientoMixed))')
+                if(length(entradaValidation) == 0)
+                    validation = nothing
+                else
+                    validation = (stack(entradaValidation)', collect(stack(salidaDeseadaValidation))')
+                end
+                test = (stack(entradaTest)', collect(stack(salidaDeseadaTest))')
                 #Entrenar RNA
-                (redNeuronal, trainLosses, valLosses, testLosses) = trainClassANN(topology, (entradaEntrenamientoMixed, salidaDeseadaEntrenamientoMixed), (entradaValidation, salidaDeseadaValidation), (entradaTest, salidaDeseadaTest), transferFunctions, maxEpochs, minLoss, learningRate)
+                if(isnothing(validation))
+                    (redNeuronal, trainLosses, valLosses, testLosses) = trainClassANN(topology, entrenamiento, testDataset = test, transferFunctions = transferFunctions, maxEpochs = maxEpochs, minLoss = minLoss, learningRate = learningRate, maxEpochsVal = maxEpochsVal)
+                else
+                    (redNeuronal, trainLosses, valLosses, testLosses) = trainClassANN(topology, entrenamiento, validationDataset = validation, testDataset = test, transferFunctions = transferFunctions, maxEpochs = maxEpochs, minLoss = minLoss, learningRate = learningRate, maxEpochsVal = maxEpochsVal)
+                end
                 #Cojer salida de RNA
-                salidaTest = redNeuronal(entradaTest)
+                salidaTest = redNeuronal(stack(entradaTest))
                 #Salida y separación de confusionMatrix
-                (precisionCarry[j], tasaErrorCarry[j], sensibilidadCarry[j], especificidadCarry[j], VPPCarry[j], VPNCarry[j], F1Carry[j], confusionMatrixCarry[j]) = confusionMatrix(salidaTest, salidaDeseadaTest)
+                (precisionCarry[j], tasaErrorCarry[j], sensibilidadCarry[j], especificidadCarry[j], VPPCarry[j], VPNCarry[j], F1Carry[j], confusionMatrixCarry[j]) = confusionMatrix(stack(salidaTest)', collect(stack(salidaDeseadaTest))')
             end    
 
             #media hacha de forma manual
@@ -775,7 +787,7 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
 
     #media de valors con desviación + matriz de confusion total
     calc(vec) = (mean(vec), std(vec))
-    (calc(precision), calc(tasaError), calc(sensibilidad), calc(especificidad), calc(VPP), calc(VPN), calc(F1), confusionMatrixGlobal)
+    return (calc(precision), calc(tasaError), calc(sensibilidad), calc(especificidad), calc(VPP), calc(VPN), calc(F1), confusionMatrixGlobal)
 end;
 
 

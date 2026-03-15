@@ -735,7 +735,14 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
             salidaDeseadaTest = encoding[crossValidationIndices .== i]
 
             #Inits
-            confusionMatrixResult = zeros(Float32, length(clases), length(clases))
+            precisionCarry = zeros(numExecutions)
+            tasaErrorCarry = zeros(numExecutions)
+            sensibilidadCarry = zeros(numExecutions)
+            especificidadCarry = zeros(numExecutions)
+            VPPCarry = zeros(numExecutions)
+            VPNCarry = zeros(numExecutions)
+            F1Carry = zeros(numExecutions)
+            confusionMatrixCarry = Array{Array, 1}(undef, numExecutions)
 
             for j in 1:numExecutions
 
@@ -752,18 +759,18 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
                 #Cojer salida de RNA
                 salidaTest = redNeuronal(entradaTest)
                 #Salida y separación de confusionMatrix
-                (precision[i], tasaError[i], sensibilidad[i], especificidad[i], VPP[i], VPN[i], F1[i], confusionMatrixResult) += confusionMatrix(salidaTest, salidaDeseadaTest)
+                (precisionCarry[j], tasaErrorCarry[j], sensibilidadCarry[j], especificidadCarry[j], VPPCarry[j], VPNCarry[j], F1Carry[j], confusionMatrixCarry[j]) = confusionMatrix(salidaTest, salidaDeseadaTest)
             end    
 
             #media hacha de forma manual
-            precision[i] /= numExecutions
-            tasaError[i] /= numExecutions
-            sensibilidad[i] /= numExecutions
-            especificidad[i] /= numExecutions
-            VPP[i] /= numExecutions
-            VPN[i] /= numExecutions
-            F1[i] /= numExecutions
-            confusionMatrixGlobal += confusionMatrixResult / numExecutions
+            precision[i] = mean(precisionCarry)
+            tasaError[i] = mean(tasaErrorCarry)
+            sensibilidad[i] = mean(sensibilidadCarry)
+            especificidad[i] = mean(especificidadCarry)
+            VPP[i] = mean(VPPCarry)
+            VPN[i] = mean(VPNCarry)
+            F1[i] = mean(F1Carry)
+            confusionMatrixGlobal += mean(confusionMatrixCarry)
     end
 
     #media de valors con desviación + matriz de confusion total

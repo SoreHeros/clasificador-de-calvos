@@ -515,18 +515,57 @@ println("="^70)
         println("   ✓ crossvalidation(Any 1D, k) correcto")
     end
 
-    @testset "ANNCrossValidation" begin
+    @testset "ANNCrossValidation binario" begin
         #test simple del problema de xor
         seed!(13)
         elements = 20
         inputs = rand(Float32, elements, 2) .* 2.0 .-1.0
         outputs = [xor(row[1]>0, row[2]>2) for row in eachrow(inputs)]
-        indexes = crossvalidation(outputs, 4)
-        (precision, tasaError, sensibilidad, especificidad, VPP, VPN, F1, confusionMatrixGlobal) = ANNCrossValidation([4], (inputs, outputs), indexes, numExecutions = 5)#4-fold
-        @test confusionMatrixGlobal[1] > 2.5
-        @test confusionMatrixGlobal[2] < 2.5
-        @test confusionMatrixGlobal[3] < 2.5
-        @test confusionMatrixGlobal[4] > 2.5
+        indexes = crossvalidation(outputs, 4)#4-fold
+        (precision, tasaError, sensibilidad, especificidad, VPP, VPN, F1, confusionMatrixGlobal) = ANNCrossValidation([4], (inputs, outputs), indexes, numExecutions = 5)
+        media = mean(confusionMatrixGlobal)
+        k, l = size(confusionMatrixGlobal)
+        for i in 1:k
+            for j in 1:l
+                if(i == j)
+                    @test confusionMatrixGlobal[i, j] > media
+                else
+                    @test confusionMatrixGlobal[i, j] < media
+                end
+            end
+        end
+        println(" ✓ ANNCrossValidation binario correcto")
+    end
+
+    @testset "ANNCrossValidation multiclase" begin
+        #test simple del problema de xor
+        seed!(13)
+        elements = 20
+        inputs = rand(Float32, elements, 1) .* 2.0 .-1.0
+        outputs = Array{String, 1}(undef, elements)
+        for i in 1:elements
+            if(inputs[i] > 0.5)
+                outputs[i] = "Positivo"
+            elseif (inputs[i] < -0.5)
+                outputs[i] = "Negativo"
+            else
+                outputs[i] = "Cero"
+            end
+        end
+        indexes = crossvalidation(outputs, 5)#5-fold
+        (precision, tasaError, sensibilidad, especificidad, VPP, VPN, F1, confusionMatrixGlobal) = ANNCrossValidation([4], (inputs, outputs), indexes, numExecutions = 5)
+        media = mean(confusionMatrixGlobal)
+        k, l = size(confusionMatrixGlobal)
+        for i in 1:k
+            for j in 1:l
+                if(i == j)
+                    @test confusionMatrixGlobal[i, j] > media
+                else
+                    @test confusionMatrixGlobal[i, j] < media
+                end
+            end
+        end
+        println(" ✓ ANNCrossValidation multiclase correcto")
     end
 end
 

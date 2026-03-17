@@ -769,7 +769,7 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
                     (redNeuronal, trainLosses, valLosses, testLosses) = trainClassANN(topology, entrenamiento, validationDataset = validation, testDataset = test, transferFunctions = transferFunctions, maxEpochs = maxEpochs, minLoss = minLoss, learningRate = learningRate, maxEpochsVal = maxEpochsVal)
                 end
                 #Cojer salida de RNA
-                salidaTest = redNeuronal(stack(entradaTest))
+                salidaTest = redNeuronal(Float32.(stack(entradaTest)))
                 #Salida y separación de confusionMatrix
                 (precisionCarry[j], tasaErrorCarry[j], sensibilidadCarry[j], especificidadCarry[j], VPPCarry[j], VPNCarry[j], F1Carry[j], confusionMatrixCarry[j]) = confusionMatrix(stack(salidaTest)', collect(stack(salidaDeseadaTest))')
             end    

@@ -805,7 +805,99 @@ DTClassifier = MLJ.@load DecisionTreeClassifier pkg = DecisionTree verbosity = 0
 
 
 function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dataset::Tuple{AbstractArray{<:Real,2},AbstractArray{<:Any,1}}, crossValidationIndices::Array{Int64,1})
-    #
-    # Codigo a desarrollar
-    #
+    (inputs, targets) = dataset;
+
+    # ANN
+    if (modelType==:ANN)
+        return ANNCrossValidation(modelHyperparameters["topology"],
+        dataset,
+        crossValidationIndices,
+        numExecutions = haskey(modelHyperparameters, "numExecutions") ? modelHyperparameters["numExecutions"] : 50,
+        transferFunctions = haskey(modelHyperparameters, "transferFunctions") ? modelHyperparameters["transferFunctions"] : fill(σ, length(modelHyperparameters["topology"])),
+        maxEpochs = haskey(modelHyperparameters, "maxEpochs") ? modelHyperparameters["maxEpochs"] : 1000, 
+        minLoss = haskey(modelHyperparameters, "minLoss") ? modelHyperparameters["minLoss"] : 0.0,
+        learningRate = haskey(modelHyperparameters, "learningRate") ? modelHyperparameters["learningRate"] : 0.01,
+        validationRatio = haskey(modelHyperparameters, "validationRatio") ? modelHyperparameters["validationRatio"] : 0,
+        maxEpochsVal = haskey(modelHyperparameters, "maxEpochsVal") ? modelHyperparameters["maxEpochsVal"] : 20
+        );
+    end;
+
+    # no ANN
+
+    #Get folds
+    folds = maximum(crossValidationIndices)
+
+    #Inits
+    precision = Array{Float64,1}(undef, numExecutions);
+    tasaError = Array{Float64,1}(undef, numExecutions);
+    sensibilidad = Array{Float64,1}(undef, numExecutions);
+    especificidad = Array{Float64,1}(undef, numExecutions);
+    VPP = Array{Float64,1}(undef, numExecutions);
+    VPN = Array{Float64,1}(undef, numExecutions);
+    F1 = Array{Float64,1}(undef, numExecutions);
+    confusionMatrixGlobal = Array{Float64,3}(undef, length(classes), length(classes), numExecutions);
+
+    #salidas deseadas  -> vector de cadenas de texto
+    targets = string.(targets);
+    classes = unique(targets);
+
+    for numFold in 1:numFolds
+
+        #datos de entrenamiento y test
+        trainingInputs = inputs[crossValidationIndices.!=numFold,:];
+        testInputs = inputs[crossValidationIndices.==numFold,:];
+        trainingTargets = targets[crossValidationIndices.!=numFold];
+        testTargets = targets[crossValidationIndices.==numFold];
+
+    if modelType==:DoME
+        testOutputs = trainClassDoME((trainingInputs, trainingTargets), testInputs, modelHyperparameters["maximumNodes"]) 
+    else
+        if modelType==:SVC
+                @assert((modelHyperparameters["kernel"] == "linear") || (modelHyperparameters["kernel"] == "poly") || (modelHyperparameters["kernel"] == "rbf") || (modelHyperparameters["kernel"] == "sigmoid"));
+                model = SVMClassifier(
+                    kernel = 
+                        modelHyperparameters["kernel"]=="linear" ? LIBSVM.Kernel.Linear :
+                        modelHyperparameters["kernel"]=="rbf" ? LIBSVM.Kernel.RadialBasis : 
+                        modelHyperparameters["kernel"]=="poly" ? LIBSVM.Kernel.Polynomial :
+                        modelHyperparameters["kernel"]=="sigmoid" ? LIBSVM.Kernel.Sigmoid : nothing, 
+                    cost   = Float64(modelHyperparameters["C"]),
+                    gamma  = Float64(get(modelHyperparameters, "gamma",  -1)),
+                    degree = Int32(  get(modelHyperparameters, "degree", -1)),
+                    coef0  = Float64(get(modelHyperparameters, "coef0",  -1)));
+        elseif modelType==:DecisionTreeClassifier
+            model = DTClassifier(max_depth = modelHyperparameters["max_depth"], rng=Random.MersenneTwister(1));
+        elseif modelType==:KNeighborsClassifier
+            model = kNNClassifier(K = modelHyperparameters["n_neighbors"]);
+        else
+            error(string("Not valid model ", modelType));
+        end;
+
+        # entrenarmiento del modelo
+        mach = machine(model, MLJ.table(trainingInputs), categorical(trainingTargets));
+        MLJ.fit!(mach, verbosity=0)
+
+        testOutputs = MLJ.predict(mach, MLJ.table(testInputs))
+
+        if modelType==:DecisionTreeClassifier || modelType==:KNeighborsClassifier
+            testOututs = mode.(testOutputs)
+        end;
+
+    end;
+
+    # Mertricas y matriz de confusiónm
+    (precision[numFold],
+    tasaError[numFold],
+    sensibilidad[numFold],
+    especificidad[numFold],
+    VPP[numFold],
+    VPN[numFold],
+    F1[numFold],
+    confusionMatrixGlobal) = confusionMatrix(testOutputs, testTargets, classes);
+
+    end;
+
+    #media de valors con desviación + matriz de confusion total
+    calc(vec) = (mean(vec), std(vec))
+    return (calc(precision), calc(tasaError), calc(sensibilidad), calc(especificidad), calc(VPP), calc(VPN), calc(F1), confusionMatrixGlobal)
+
 end;

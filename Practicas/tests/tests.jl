@@ -519,15 +519,15 @@ println("="^70)
         #test simple del problema de xor
         seed!(13)
         elements = 20
-        inputs = rand(Float32, elements, 2) .* 2.0 .-1.0
-        outputs = [xor(row[1]>0, row[2]>2) for row in eachrow(inputs)]
+        inputs = rand(Float32, elements, 2) .* 2.0 .- 1.0
+        outputs = [xor(row[1] > 0, row[2] > 2) for row in eachrow(inputs)]
         indexes = crossvalidation(outputs, 4)#4-fold
-        (precision, tasaError, sensibilidad, especificidad, VPP, VPN, F1, confusionMatrixGlobal) = ANNCrossValidation([4], (inputs, outputs), indexes, numExecutions = 5)
+        (precision, tasaError, sensibilidad, especificidad, VPP, VPN, F1, confusionMatrixGlobal) = ANNCrossValidation([4], (inputs, outputs), indexes, numExecutions=5)
         media = mean(confusionMatrixGlobal)
         k, l = size(confusionMatrixGlobal)
         for i in 1:k
             for j in 1:l
-                if(i == j)
+                if (i == j)
                     @test confusionMatrixGlobal[i, j] > media
                 else
                     @test confusionMatrixGlobal[i, j] < media
@@ -541,10 +541,10 @@ println("="^70)
         #test simple del problema de xor
         seed!(13)
         elements = 20
-        inputs = rand(Float32, elements, 1) .* 2.0 .-1.0
-        outputs = Array{String, 1}(undef, elements)
+        inputs = rand(Float32, elements, 1) .* 2.0 .- 1.0
+        outputs = Array{String,1}(undef, elements)
         for i in 1:elements
-            if(inputs[i] > 0.5)
+            if (inputs[i] > 0.5)
                 outputs[i] = "Positivo"
             elseif (inputs[i] < -0.5)
                 outputs[i] = "Negativo"
@@ -553,12 +553,12 @@ println("="^70)
             end
         end
         indexes = crossvalidation(outputs, 5)#5-fold
-        (precision, tasaError, sensibilidad, especificidad, VPP, VPN, F1, confusionMatrixGlobal) = ANNCrossValidation([4], (inputs, outputs), indexes, numExecutions = 5)
+        (precision, tasaError, sensibilidad, especificidad, VPP, VPN, F1, confusionMatrixGlobal) = ANNCrossValidation([4], (inputs, outputs), indexes, numExecutions=5)
         media = mean(confusionMatrixGlobal)
         k, l = size(confusionMatrixGlobal)
         for i in 1:k
             for j in 1:l
-                if(i == j)
+                if (i == j)
                     @test confusionMatrixGlobal[i, j] > media
                 else
                     @test confusionMatrixGlobal[i, j] < media
@@ -837,6 +837,86 @@ inputs = convert(Array{Float32,2}, dataset[:, 1:4])
         @assert(outputs3Classes_any[1] == "Iris-virginica")
         println("Test 4 (Cualquier tipo - Multiclase): PASADO")
     end
+
+    # ----------------------------------------------------------------------------------------------
+    # ------------------------------------- Ejercicio 6 --------------------------------------------
+    # ----------------------------------------------------------------------------------------------
+
+
+
+
+    ((testAccuracy_mean, testAccuracy_std), (testErrorRate_mean, testErrorRate_std), (testRecall_mean, testRecall_std), (testSpecificity_mean, testSpecificity_std), (testPrecision_mean, testPrecision_std), (testNPV_mean, testNPV_std), (testF1_mean, testF1_std), testConfusionMatrix) =
+        modelCrossValidation(:DoME, Dict("maximumNodes" => 20), (inputs, targets), repeat(1:10, 15))
+    @assert(isapprox(testAccuracy_mean, 0.9533333333333335) && isapprox(testAccuracy_std, 0.032203059435976525))
+    @assert(isapprox(testErrorRate_mean, 0.046666666666666655) && isapprox(testErrorRate_std, 0.032203059435976525))
+    @assert(isapprox(testRecall_mean, 0.9533333333333335) && isapprox(testRecall_std, 0.032203059435976525))
+    @assert(isapprox(testSpecificity_mean, 0.9766666666666668) && isapprox(testSpecificity_std, 0.016101529717988314))
+    @assert(isapprox(testPrecision_mean, 0.9611111111111112) && isapprox(testPrecision_std, 0.026835882863313787))
+    @assert(isapprox(testNPV_mean, 0.9787878787878785) && isapprox(testNPV_std, 0.014637754289080304))
+    @assert(isapprox(testF1_mean, 0.9528619528619527) && isapprox(testF1_std, 0.032528342864622826))
+    @assert(all(isapprox(testConfusionMatrix, [49 1 0; 0 48 2; 0 4 46])))
+
+
+    ((testAccuracy_mean, testAccuracy_std), (testErrorRate_mean, testErrorRate_std), (testRecall_mean, testRecall_std), (testSpecificity_mean, testSpecificity_std), (testPrecision_mean, testPrecision_std), (testNPV_mean, testNPV_std), (testF1_mean, testF1_std), testConfusionMatrix) =
+        modelCrossValidation(:SVC,
+            Dict(
+                "C" => 1,
+                "kernel" => "rbf",
+                "gamma" => 3),
+            (inputs, targets), repeat(1:10, 15))
+    @assert(isapprox(testAccuracy_mean, 0.96) && isapprox(testAccuracy_std, 0.03442651863295481))
+    @assert(isapprox(testErrorRate_mean, 0.04) && isapprox(testErrorRate_std, 0.0344265186329548))
+    @assert(isapprox(testRecall_mean, 0.96) && isapprox(testRecall_std, 0.03442651863295481))
+    @assert(isapprox(testSpecificity_mean, 0.98) && isapprox(testSpecificity_std, 0.01721325931647746))
+    @assert(isapprox(testPrecision_mean, 0.9666666666666666) && isapprox(testPrecision_std, 0.028688765527462363))
+    @assert(isapprox(testNPV_mean, 0.9818181818181817) && isapprox(testNPV_std, 0.01564841756043409))
+    @assert(isapprox(testF1_mean, 0.9595959595959596) && isapprox(testF1_std, 0.03477426124540898))
+    @assert(all(isapprox(testConfusionMatrix, [49 0 1; 0 47 3; 0 2 48])))
+
+
+    ((testAccuracy_mean, testAccuracy_std), (testErrorRate_mean, testErrorRate_std), (testRecall_mean, testRecall_std), (testSpecificity_mean, testSpecificity_std), (testPrecision_mean, testPrecision_std), (testNPV_mean, testNPV_std), (testF1_mean, testF1_std), testConfusionMatrix) =
+        modelCrossValidation(:DecisionTreeClassifier, Dict("max_depth" => 4), (inputs, targets), repeat(1:10, 15))
+    @assert(isapprox(testAccuracy_mean, 0.9466666666666669) && isapprox(testAccuracy_std, 0.052587375849774354))
+    @assert(isapprox(testErrorRate_mean, 0.05333333333333332) && isapprox(testErrorRate_std, 0.052587375849774354))
+    @assert(isapprox(testRecall_mean, 0.9466666666666667) && isapprox(testRecall_std, 0.05258737584977439))
+    @assert(isapprox(testSpecificity_mean, 0.9733333333333334) && isapprox(testSpecificity_std, 0.02629368792488719))
+    @assert(isapprox(testPrecision_mean, 0.9587301587301589) && isapprox(testPrecision_std, 0.03866418181258228))
+    @assert(isapprox(testNPV_mean, 0.9767676767676768) && isapprox(testNPV_std, 0.02223242292150734))
+    @assert(isapprox(testF1_mean, 0.9452861952861952) && isapprox(testF1_std, 0.054551689380537616))
+    @assert(all(isapprox(testConfusionMatrix, [50 0 0; 0 47 3; 0 5 45])))
+
+
+    ((testAccuracy_mean, testAccuracy_std), (testErrorRate_mean, testErrorRate_std), (testRecall_mean, testRecall_std), (testSpecificity_mean, testSpecificity_std), (testPrecision_mean, testPrecision_std), (testNPV_mean, testNPV_std), (testF1_mean, testF1_std), testConfusionMatrix) =
+        modelCrossValidation(:KNeighborsClassifier, Dict("n_neighbors" => 3), (inputs, targets), repeat(1:10, 15))
+    @assert(isapprox(testAccuracy_mean, 0.9666666666666668) && isapprox(testAccuracy_std, 0.03513641844631532))
+    @assert(isapprox(testErrorRate_mean, 0.0333333333333333) && isapprox(testErrorRate_std, 0.03513641844631532))
+    @assert(isapprox(testRecall_mean, 0.9666666666666668) && isapprox(testRecall_std, 0.03513641844631532))
+    @assert(isapprox(testSpecificity_mean, 0.9833333333333334) && isapprox(testSpecificity_std, 0.017568209223157716))
+    @assert(isapprox(testPrecision_mean, 0.9722222222222223) && isapprox(testPrecision_std, 0.029280348705262787))
+    @assert(isapprox(testNPV_mean, 0.9848484848484848) && isapprox(testNPV_std, 0.01597109929377977))
+    @assert(isapprox(testF1_mean, 0.9663299663299663) && isapprox(testF1_std, 0.035491331763954956))
+    @assert(all(isapprox(testConfusionMatrix, [50 0 0; 0 47 3; 0 2 48])))
+
+
+    seed!(1)
+    ((testAccuracy_mean, testAccuracy_std), (testErrorRate_mean, testErrorRate_std), (testRecall_mean, testRecall_std), (testSpecificity_mean, testSpecificity_std), (testPrecision_mean, testPrecision_std), (testNPV_mean, testNPV_std), (testF1_mean, testF1_std), testConfusionMatrix) =
+        modelCrossValidation(:ANN,
+            Dict(
+                "topology" => [4, 3],
+                "learningRate" => 0.01,
+                "validationRatio" => 0.2,
+                "numExecutions" => 50,
+                "maxEpochs" => 100,
+                "maxEpochsVal" => 20),
+            (inputs, targets), repeat(1:10, 15))
+    @assert(isapprox(testAccuracy_mean, 0.348) && isapprox(testAccuracy_std, 0.012204026860218656))
+    @assert(isapprox(testErrorRate_mean, 0.652) && isapprox(testErrorRate_std, 0.012204026860218648))
+    @assert(isapprox(testRecall_mean, 0.348) && isapprox(testRecall_std, 0.012204026860218656))
+    @assert(isapprox(testSpecificity_mean, 0.674) && isapprox(testSpecificity_std, 0.006102013430109324))
+    @assert(isapprox(testPrecision_mean, 0.7696506456506453) && isapprox(testPrecision_std, 0.003526843563719326))
+    @assert(isapprox(testNPV_mean, 0.777215007215007) && isapprox(testNPV_std, 0.0044380494173253725))
+    @assert(isapprox(testF1_mean, 0.18758329332632737) && isapprox(testF1_std, 0.01437405343817687))
+    @assert(all(isapprox(testConfusionMatrix, [18.2 14.94 16.86; 15.92 17.1 16.98; 15.82 17.28 16.9])))
 end
 
 println("\n" * "="^70)

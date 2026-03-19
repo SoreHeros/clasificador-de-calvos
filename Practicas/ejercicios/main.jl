@@ -828,20 +828,20 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dat
     folds = maximum(crossValidationIndices)
 
     #Inits
-    precision = Array{Float64,1}(undef, numExecutions);
-    tasaError = Array{Float64,1}(undef, numExecutions);
-    sensibilidad = Array{Float64,1}(undef, numExecutions);
-    especificidad = Array{Float64,1}(undef, numExecutions);
-    VPP = Array{Float64,1}(undef, numExecutions);
-    VPN = Array{Float64,1}(undef, numExecutions);
-    F1 = Array{Float64,1}(undef, numExecutions);
-    confusionMatrixGlobal = Array{Float64,3}(undef, length(classes), length(classes), numExecutions);
+    precision = Array{Float64,1}(undef, folds);
+    tasaError = Array{Float64,1}(undef, folds);
+    sensibilidad = Array{Float64,1}(undef, folds);
+    especificidad = Array{Float64,1}(undef, folds);
+    VPP = Array{Float64,1}(undef, folds);
+    VPN = Array{Float64,1}(undef, folds);
+    F1 = Array{Float64,1}(undef, folds);
+    confusionMatrixGlobal = Array{Float64,3}(undef, length(classes), length(classes), folds);
 
     #salidas deseadas  -> vector de cadenas de texto
     targets = string.(targets);
     classes = unique(targets);
 
-    for numFold in 1:numFolds
+    for numFold in 1:folds
 
         #datos de entrenamiento y test
         trainingInputs = inputs[crossValidationIndices.!=numFold,:];

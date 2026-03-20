@@ -893,7 +893,7 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dat
         VPN[numFold],
         F1[numFold],
         confusionMatrixGlobalfold) = confusionMatrix(testOutputs, testTargets, classes);
-        confusionMatrixGlobal +=confusionMatrixGlobalfold
+        confusionMatrixGlobal .+=confusionMatrixGlobalfold
     end;
 
     #media de valors con desviación + matriz de confusion total

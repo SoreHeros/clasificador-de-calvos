@@ -826,7 +826,9 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dat
 
     #Get folds
     folds = maximum(crossValidationIndices)
-
+    #salidas deseadas  -> vector de cadenas de texto
+    targets = string.(targets);
+    classes = unique(targets);
     #Inits
     precision = Array{Float64,1}(undef, folds);
     tasaError = Array{Float64,1}(undef, folds);
@@ -837,9 +839,7 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dat
     F1 = Array{Float64,1}(undef, folds);
     confusionMatrixGlobal = Array{Float64,3}(undef, length(classes), length(classes), folds);
 
-    #salidas deseadas  -> vector de cadenas de texto
-    targets = string.(targets);
-    classes = unique(targets);
+    
 
     for numFold in 1:folds
 
@@ -879,7 +879,7 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dat
         testOutputs = MLJ.predict(mach, MLJ.table(testInputs))
 
         if modelType==:DecisionTreeClassifier || modelType==:KNeighborsClassifier
-            testOututs = mode.(testOutputs)
+            testOutputs = mode.(testOutputs)
         end;
 
     end;

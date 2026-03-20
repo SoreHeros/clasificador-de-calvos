@@ -823,12 +823,13 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dat
     end;
 
     # no ANN
-
-    #Get folds
-    folds = maximum(crossValidationIndices)
     #salidas deseadas  -> vector de cadenas de texto
     targets = string.(targets);
     classes = unique(targets);
+
+    #Get folds
+    folds = maximum(crossValidationIndices)
+    
     #Inits
     precision = Array{Float64,1}(undef, folds);
     tasaError = Array{Float64,1}(undef, folds);
@@ -837,8 +838,7 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dat
     VPP = Array{Float64,1}(undef, folds);
     VPN = Array{Float64,1}(undef, folds);
     F1 = Array{Float64,1}(undef, folds);
-    confusionMatrixGlobal = Array{Float64,3}(undef, length(classes), length(classes), folds);
-
+    confusionMatrixGlobal = zeros(Float64, length(classes), length(classes), folds)
     
 
     for numFold in 1:folds
@@ -849,51 +849,51 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, dat
         trainingTargets = targets[crossValidationIndices.!=numFold];
         testTargets = targets[crossValidationIndices.==numFold];
 
-    if modelType==:DoME
-        testOutputs = trainClassDoME((trainingInputs, trainingTargets), testInputs, modelHyperparameters["maximumNodes"]) 
-    else
-        if modelType==:SVC
-                @assert((modelHyperparameters["kernel"] == "linear") || (modelHyperparameters["kernel"] == "poly") || (modelHyperparameters["kernel"] == "rbf") || (modelHyperparameters["kernel"] == "sigmoid"));
-                model = SVMClassifier(
-                    kernel = 
-                        modelHyperparameters["kernel"]=="linear" ? LIBSVM.Kernel.Linear :
-                        modelHyperparameters["kernel"]=="rbf" ? LIBSVM.Kernel.RadialBasis : 
-                        modelHyperparameters["kernel"]=="poly" ? LIBSVM.Kernel.Polynomial :
-                        modelHyperparameters["kernel"]=="sigmoid" ? LIBSVM.Kernel.Sigmoid : nothing, 
-                    cost   = Float64(modelHyperparameters["C"]),
-                    gamma  = Float64(get(modelHyperparameters, "gamma",  -1)),
-                    degree = Int32(  get(modelHyperparameters, "degree", -1)),
-                    coef0  = Float64(get(modelHyperparameters, "coef0",  -1)));
-        elseif modelType==:DecisionTreeClassifier
-            model = DTClassifier(max_depth = modelHyperparameters["max_depth"], rng=Random.MersenneTwister(1));
-        elseif modelType==:KNeighborsClassifier
-            model = kNNClassifier(K = modelHyperparameters["n_neighbors"]);
+        if modelType==:DoME
+            testOutputs = trainClassDoME((trainingInputs, trainingTargets), testInputs, modelHyperparameters["maximumNodes"]) 
         else
-            error(string("Not valid model ", modelType));
+            if modelType==:SVC
+                    @assert((modelHyperparameters["kernel"] == "linear") || (modelHyperparameters["kernel"] == "poly") || (modelHyperparameters["kernel"] == "rbf") || (modelHyperparameters["kernel"] == "sigmoid"));
+                    model = SVMClassifier(
+                        kernel = 
+                            modelHyperparameters["kernel"]=="linear" ? LIBSVM.Kernel.Linear :
+                            modelHyperparameters["kernel"]=="rbf" ? LIBSVM.Kernel.RadialBasis : 
+                            modelHyperparameters["kernel"]=="poly" ? LIBSVM.Kernel.Polynomial :
+                            modelHyperparameters["kernel"]=="sigmoid" ? LIBSVM.Kernel.Sigmoid : nothing, 
+                        cost   = Float64(modelHyperparameters["C"]),
+                        gamma  = Float64(get(modelHyperparameters, "gamma",  -1)),
+                        degree = Int32(  get(modelHyperparameters, "degree", -1)),
+                        coef0  = Float64(get(modelHyperparameters, "coef0",  -1)));
+            elseif modelType==:DecisionTreeClassifier
+                model = DTClassifier(max_depth = modelHyperparameters["max_depth"], rng=Random.MersenneTwister(1));
+            elseif modelType==:KNeighborsClassifier
+                model = kNNClassifier(K = modelHyperparameters["n_neighbors"]);
+            else
+                error(string("Not valid model ", modelType));
+            end;
+
+            # entrenarmiento del modelo
+            mach = machine(model, MLJ.table(trainingInputs), categorical(trainingTargets));
+            MLJ.fit!(mach, verbosity=0)
+
+            testOutputs = MLJ.predict(mach, MLJ.table(testInputs))
+
+            if modelType==:DecisionTreeClassifier || modelType==:KNeighborsClassifier
+                testOutputs = mode.(testOutputs)
+            end;
+
         end;
 
-        # entrenarmiento del modelo
-        mach = machine(model, MLJ.table(trainingInputs), categorical(trainingTargets));
-        MLJ.fit!(mach, verbosity=0)
-
-        testOutputs = MLJ.predict(mach, MLJ.table(testInputs))
-
-        if modelType==:DecisionTreeClassifier || modelType==:KNeighborsClassifier
-            testOutputs = mode.(testOutputs)
-        end;
-
-    end;
-
-    # Mertricas y matriz de confusiónm
-    (precision[numFold],
-    tasaError[numFold],
-    sensibilidad[numFold],
-    especificidad[numFold],
-    VPP[numFold],
-    VPN[numFold],
-    F1[numFold],
-    confusionMatrixGlobal) = confusionMatrix(testOutputs, testTargets, classes);
-
+        # Mertricas y matriz de confusiónm
+        (precision[numFold],
+        tasaError[numFold],
+        sensibilidad[numFold],
+        especificidad[numFold],
+        VPP[numFold],
+        VPN[numFold],
+        F1[numFold],
+        confusionMatrixGlobalfold) = confusionMatrix(testOutputs, testTargets, classes);
+        confusionMatrixGlobal +=confusionMatrixGlobalfold
     end;
 
     #media de valors con desviación + matriz de confusion total

@@ -125,7 +125,16 @@ function imprimirInformeFinal(nombreModelo::String, resultados::Tuple, clases::V
     println("="^50 * "\n")
 end
 
-# Usamos el nivel 2 porque el nivel 1 cuenta con pocas imágenes
+
+X_raw, y_raw, rutas_raw = generarDatasetCalvicieBinario(joinpath(@__DIR__, "../../Dataset"), ["Nivel 2", "Nivel 7"])
+
+X_norm = normalizeMinMax(X_raw)
+
+indices_cv = crossvalidation(y_raw, 10)
+
+hiperparametros = Dict("kernel" => "linear", "C" => 1.0)
+resultados = modelCrossValidation(:SVC, hiperparametros, (X_norm, y_raw), indices_cv)
+
 clases_test = ["Nivel 2", "Nivel 7"]
 imprimirInformeFinal("SVM Lineal (C=1.0)", resultados, clases_test)
 

@@ -91,6 +91,7 @@ function generarDatasetCalvicieBinario(directorioBase::String, clasesInteres::Ve
             # f1, f2, f3... ya usan calculateZeroMeanNormalizationParameters de solucion.jl 
             zonas = vcat(
             extraerCaracteristicasSeccion(img, 135:190, 10:60),   #Parte inferior izq
+            extraerCaracteristicasSeccion(img, 135:190, 140:190),   #Parte inferior izq
             extraerCaracteristicasSeccion(img, 135:190, 60:110),  # Parte inferior central
             extraerCaracteristicasSeccion(img, 50:80, 1:180),   # Parte subposteior central
             extraerCaracteristicasSeccion(img, 80:135, 1:180), # Parte inferior central

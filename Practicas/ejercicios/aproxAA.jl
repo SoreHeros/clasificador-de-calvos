@@ -43,17 +43,29 @@ function procesarImagen(ruta::String)
     return img
 end
 
-function extraerCaracteristicasSeccion(img, y_range, x_range)
+function extraerCaracteristicasSeccion(img, y_range, x_range,modo="RGB")
     # 1. Recortamos la sección de la imagen
     seccion = img[y_range, x_range]
 
     # 2. Convertimos a RGB y extraemos los canales
     # channelview devuelve una matriz de (3, alto, ancho)
-    canales = channelview(RGB.(seccion))
+    if modo == "RGB"
+        canales = channelview(RGB.(seccion))
+         pixeles = Float64.(reshape(canales, 3, :)')
+    elseif modo == "HSV"
+        canales = channelview(HSV.(seccion))
+         pixeles = Float64.(reshape(canales, 3, :)')
+    elseif modo == "GRAY"
+        canales = channelview(Gray.(seccion))
+         pixeles = Float64.(reshape(canales, 1, :)')
+        
+    else
+        error("Modo no soportado: usa RGB, HSV o GRAY")
+    end
 
     # 3. Reorganizamos los datos a una matriz (Píxeles x 3 Canales)
     # Esto es necesario porque calculateZeroMeanNormalizationParameters espera una matriz 2D 
-    pixeles = Float64.(reshape(canales, 3, :)')
+   
 
     # 4. LLAMADA A TU FUNCIÓN DE solucion.jl 
     # Obtenemos las medias y desviaciones típicas de los 3 canales a la vez
@@ -82,11 +94,18 @@ function generarDatasetCalvicieBinario(directorioBase::String, clasesInteres::Ve
             img = procesarImagen(rutaCompleta)
 
             # Extraemos las características usando la función que definimos
-            # f1 y f2 ya usan calculateZeroMeanNormalizationParameters de solucion.jl 
-            f1 = extraerCaracteristicasSeccion(img, 80:120, 80:120) # Coronilla
-            f2 = extraerCaracteristicasSeccion(img, 140:180, 80:120)  # Frente
+            # f1, f2, f3... ya usan calculateZeroMeanNormalizationParameters de solucion.jl 
+            zonas = vcat(
+            extraerCaracteristicasSeccion(img, 135:190, 10:60),   # Coronilla
+            extraerCaracteristicasSeccion(img, 135:190, 110:160),   # Parte superior
+            extraerCaracteristicasSeccion(img, 135:190, 60:110),  # Frente
+            extraerCaracteristicasSeccion(img, 50:80, 1:180),   # Entrada izq
+            extraerCaracteristicasSeccion(img, 80:135, 1:180), # Entrada der
+            extraerCaracteristicasSeccion(img, 5:50, 10:180),     # Lateral izq
+            extraerCaracteristicasSeccion(img, 10:35, 60:140)   # Lateral der
+        )
 
-            push!(entradas, vcat(f1, f2))
+            push!(entradas, zonas)
             push!(etiquetas, clase)
             push!(rutas, rutaCompleta) # Guardamos la ruta
         end
@@ -126,7 +145,7 @@ function imprimirInformeFinal(nombreModelo::String, resultados::Tuple, clases::V
 end
 
 
-X_raw, y_raw, rutas_raw = generarDatasetCalvicieBinario(joinpath(@__DIR__, "../../Dataset"), ["Nivel 2", "Nivel 7"])
+X_raw, y_raw, rutas_raw = generarDatasetCalvicieBinario(joinpath(@__DIR__, "../../Dataset"), ["Nivel 2","Nivel 3","Nivel 6", "Nivel 7"])
 
 X_norm = normalizeMinMax(X_raw)
 
@@ -135,7 +154,7 @@ indices_cv = crossvalidation(y_raw, 10)
 hiperparametros = Dict("kernel" => "linear", "C" => 1.0)
 resultados = modelCrossValidation(:SVC, hiperparametros, (X_norm, y_raw), indices_cv)
 
-clases_test = ["Nivel 2", "Nivel 7"]
+clases_test = ["Nivel 2","Nivel 3","Nivel 6", "Nivel 7"]
 imprimirInformeFinal("SVM Lineal (C=1.0)", resultados, clases_test)
 
 

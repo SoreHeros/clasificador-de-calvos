@@ -100,8 +100,11 @@ function generarDatasetCalvicieBinario(directorioBase::String, clasesInteres::Ve
                 extraerCaracteristicasPorcentaje(img, 0.675, 0.95, 0.30, 0.55),  # inferior centro
                 extraerCaracteristicasPorcentaje(img, 0.25, 0.40, 0.005, 0.90),  # subposterior
                 extraerCaracteristicasPorcentaje(img, 0.40, 0.675, 0.005, 0.90), # zona media
-                extraerCaracteristicasPorcentaje(img, 0.005, 0.95, 0.05, 0.95)   # cabeza completa
-            )
+                extraerCaracteristicasPorcentaje(img, 0.05, 0.95, 0.05, 0.95),   # cabeza completa
+                extraerCaracteristicasPorcentaje(img, 0.05, 0.25, 0.15, 0.85),   # Coronilla
+                extraerCaracteristicasPorcentaje(img, 0.1, 0.9, 0.10, 0.35),    # lateral izquierdo
+                extraerCaracteristicasPorcentaje(img, 0.1, 0.9, 0.65, 0.9)      # lateral derecho
+                )
 
             push!(entradas, zonas)
             push!(etiquetas, clase)

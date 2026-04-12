@@ -39,7 +39,6 @@ end
 function procesarImagen(ruta::String)
     img = FileIO.load(ruta)
     # Aseguramos un tamaño fijo para que las secciones sean siempre las mismas
-    img = imresize(img, (200, 200))
     return img
 end
 
@@ -54,19 +53,25 @@ function extraerCaracteristicasSeccion(img, y_range, x_range)
     grey = channelview(Gray.(seccion))
     pixeles_rgb = Float64.(reshape(canales, 3, :)')
     pixeles_grey = Float64.(reshape(grey, 1, :)')
-    pixeles = hcat(pixeles_rgb, pixeles_grey)
-
-
     # 3. Reorganizamos los datos a una matriz (Píxeles x 3 Canales)
     # Esto es necesario porque calculateZeroMeanNormalizationParameters espera una matriz 2D 
    
 
     # 4. LLAMADA A TU FUNCIÓN DE solucion.jl 
     # Obtenemos las medias y desviaciones típicas de los 3 canales a la vez
-    (medias, desviaciones) = calculateZeroMeanNormalizationParameters(pixeles)
-
+    (medias, desviaciones) = calculateZeroMeanNormalizationParameters(pixeles_rgb)
+    (medias2, desviaciones2) = calculateZeroMeanNormalizationParameters(pixeles_grey)
     # Devolvemos un vector con los 6 valores: [R_media, G_media, B_media, R_std, G_std, B_std]
-    return vcat(vec(medias), vec(desviaciones))
+    return vcat(vec(medias), vec(desviaciones),vec(medias2), vec(desviaciones2))
+end
+
+function extraerCaracteristicasPorcentaje(img, y1, y2, x1, x2)
+    alto, ancho = size(img)[1:2]
+
+    y_range = round(Int, y1 * alto):round(Int, y2 * alto)
+    x_range = round(Int, x1 * ancho):round(Int, x2 * ancho)
+
+    return extraerCaracteristicasSeccion(img, y_range, x_range)
 end
 
 function generarDatasetCalvicieBinario(directorioBase::String, clasesInteres::Vector{String})
@@ -90,13 +95,13 @@ function generarDatasetCalvicieBinario(directorioBase::String, clasesInteres::Ve
             # Extraemos las características usando la función que definimos
             # f1, f2, f3... ya usan calculateZeroMeanNormalizationParameters de solucion.jl 
             zonas = vcat(
-            extraerCaracteristicasSeccion(img, 135:190, 10:60),   #Parte inferior izq
-            extraerCaracteristicasSeccion(img, 135:190, 140:190),   #Parte inferior izq
-            extraerCaracteristicasSeccion(img, 135:190, 60:110),  # Parte inferior central
-            extraerCaracteristicasSeccion(img, 50:80, 1:180),   # Parte subposteior central
-            extraerCaracteristicasSeccion(img, 80:135, 1:180), # Parte inferior central
-            
-        )
+                extraerCaracteristicasPorcentaje(img, 0.675, 0.95, 0.05, 0.30),  # inferior izq
+                extraerCaracteristicasPorcentaje(img, 0.675, 0.95, 0.70, 0.95),  # inferior der
+                extraerCaracteristicasPorcentaje(img, 0.675, 0.95, 0.30, 0.55),  # inferior centro
+                extraerCaracteristicasPorcentaje(img, 0.25, 0.40, 0.005, 0.90),  # subposterior
+                extraerCaracteristicasPorcentaje(img, 0.40, 0.675, 0.005, 0.90), # zona media
+                extraerCaracteristicasPorcentaje(img, 0.005, 0.95, 0.05, 0.95)   # cabeza completa
+            )
 
             push!(entradas, zonas)
             push!(etiquetas, clase)
@@ -138,7 +143,7 @@ function imprimirInformeFinal(nombreModelo::String, resultados::Tuple, clases::V
 end
 
 
-X_raw, y_raw, rutas_raw = generarDatasetCalvicieBinario(joinpath(@__DIR__, "../../Dataset"), ["Nivel 1","Nivel 2","Nivel 3","Nivel 4","Nivel 5","Nivel 6", "Nivel 7"])
+X_raw, y_raw, rutas_raw = generarDatasetCalvicieBinario(joinpath(@__DIR__, "../../Dataset"), ["nivel_1","nivel_2","nivel_3","nivel_4","nivel_5","nivel_6", "nivel_7"])
 
 X_norm = normalizeMinMax(X_raw)
 
@@ -147,7 +152,7 @@ indices_cv = crossvalidation(y_raw, 10)
 hiperparametros = Dict("kernel" => "linear", "C" => 1.0)
 resultados = modelCrossValidation(:SVC, hiperparametros, (X_norm, y_raw), indices_cv)
 
-clases_test =["Nivel 1","Nivel 2","Nivel 3","Nivel 4","Nivel 5","Nivel 6", "Nivel 7"]
+clases_test =["nivel_1","nivel_2","nivel_3","nivel_4","nivel_5","nivel_6", "nivel_7"]
 imprimirInformeFinal("SVM Lineal (C=1.0)", resultados, clases_test)
 
 

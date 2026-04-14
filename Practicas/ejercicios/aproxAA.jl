@@ -53,16 +53,14 @@ function extraerCaracteristicasSeccion(img, y_range, x_range)
     grey = channelview(Gray.(seccion))
     pixeles_rgb = Float64.(reshape(canales, 3, :)')
     pixeles_grey = Float64.(reshape(grey, 1, :)')
-    # 3. Reorganizamos los datos a una matriz (Píxeles x 3 Canales)
-    # Esto es necesario porque calculateZeroMeanNormalizationParameters espera una matriz 2D 
    
+    medias = mean(pixeles_rgb, dims=1)
+    desviaciones = std(pixeles_rgb, dims=1)
 
-    # 4. LLAMADA A TU FUNCIÓN DE solucion.jl 
-    # Obtenemos las medias y desviaciones típicas de los 3 canales a la vez
-    (medias, desviaciones) = calculateZeroMeanNormalizationParameters(pixeles_rgb)
-    (medias2, desviaciones2) = calculateZeroMeanNormalizationParameters(pixeles_grey)
-    # Devolvemos un vector con los 6 valores: [R_media, G_media, B_media, R_std, G_std, B_std]
-    return vcat(vec(medias), vec(desviaciones),vec(medias2), vec(desviaciones2))
+    medias2 = mean(pixeles_grey, dims=1)
+    desviaciones2 = std(pixeles_grey, dims=1)
+
+    return vcat(vec(medias), vec(desviaciones), vec(medias2), vec(desviaciones2))
 end
 
 function extraerCaracteristicasPorcentaje(img, y1, y2, x1, x2)
@@ -97,11 +95,14 @@ function generarDatasetCalvicieBinario(directorioBase::String, clasesInteres::Ve
             zonas = vcat(
                 extraerCaracteristicasPorcentaje(img, 0.675, 0.95, 0.05, 0.30),  # inferior izq
                 extraerCaracteristicasPorcentaje(img, 0.675, 0.95, 0.70, 0.95),  # inferior der
+                extraerCaracteristicasPorcentaje(img, 0.75, 0.95, 0.35, 0.65),  # flequillo
                 extraerCaracteristicasPorcentaje(img, 0.675, 0.95, 0.30, 0.55),  # inferior centro
                 extraerCaracteristicasPorcentaje(img, 0.25, 0.40, 0.005, 0.90),  # subposterior
                 extraerCaracteristicasPorcentaje(img, 0.40, 0.675, 0.005, 0.90), # zona media
                 extraerCaracteristicasPorcentaje(img, 0.05, 0.95, 0.05, 0.95),   # cabeza completa
                 extraerCaracteristicasPorcentaje(img, 0.05, 0.25, 0.15, 0.85),   # Coronilla
+                extraerCaracteristicasPorcentaje(img, 0.01, 0.4, 0.05, 0.30),  # superior izq
+                extraerCaracteristicasPorcentaje(img, 0.01, 0.4, 0.70, 0.95),  # superior der
                 extraerCaracteristicasPorcentaje(img, 0.1, 0.9, 0.10, 0.35),    # lateral izquierdo
                 extraerCaracteristicasPorcentaje(img, 0.1, 0.9, 0.65, 0.9)      # lateral derecho
                 )
@@ -146,7 +147,7 @@ function imprimirInformeFinal(nombreModelo::String, resultados::Tuple, clases::V
 end
 
 
-X_raw, y_raw, rutas_raw = generarDatasetCalvicieBinario(joinpath(@__DIR__, "../../Dataset"), ["nivel_1","nivel_2","nivel_3","nivel_4","nivel_5","nivel_6", "nivel_7"])
+X_raw, y_raw, rutas_raw = generarDatasetCalvicieBinario(joinpath(@__DIR__, "../../Dataset"), ["nivel_1","nivel_3","nivel_5", "nivel_7"])
 
 X_norm = normalizeMinMax(X_raw)
 
@@ -155,7 +156,7 @@ indices_cv = crossvalidation(y_raw, 10)
 hiperparametros = Dict("kernel" => "linear", "C" => 1.0)
 resultados = modelCrossValidation(:SVC, hiperparametros, (X_norm, y_raw), indices_cv)
 
-clases_test =["nivel_1","nivel_2","nivel_3","nivel_4","nivel_5","nivel_6", "nivel_7"]
+clases_test =["nivel_1","nivel_3","nivel_5", "nivel_7"]
 imprimirInformeFinal("SVM Lineal (C=1.0)", resultados, clases_test)
 
 

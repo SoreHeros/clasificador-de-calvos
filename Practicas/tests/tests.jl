@@ -544,9 +544,9 @@ println("="^70)
         inputs = rand(Float32, elements, 1) .* 2.0 .- 1.0
         outputs = Array{String,1}(undef, elements)
         for i in 1:elements
-            if (inputs[i] > 0.5)
+            if (inputs[i] > 1/3)
                 outputs[i] = "Positivo"
-            elseif (inputs[i] < -0.5)
+            elseif (inputs[i] < -1/3)
                 outputs[i] = "Negativo"
             else
                 outputs[i] = "Cero"

@@ -71,8 +71,8 @@ end
 # ------------------------------------------------------------
 # CONFIGURACIÓN DEL EXPERIMENTO
 # ------------------------------------------------------------
-# Ruta al dataset (cambiar si es necesario)
-ruta_dataset = "/home/sheep_chistoso/Escritorio/AA/clasificador-de-calvos/Dataset"
+# Ruta al dataset
+ruta_dataset = joinpath(@__DIR__, "../../Dataset")
 
 # Seleccionamos las clases
 #clases_todas = ["nivel_$i" for i in 1:7]

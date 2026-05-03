@@ -1,0 +1,183 @@
+8 x 8 pixels grises
+Encontradas 202 imagenes
+┌ Warning: `Flux.params(m...)` is deprecated. Use `Flux.trainable(model)` for parameter collection,
+│ and the explicit `gradient(m -> loss(m, x, y), model)` for gradient computation.
+└ @ Flux C:\Users\Heros\.julia\packages\Flux\DZYiO\src\deprecations.jl:93
+La RNA tiene 6 capas:
+   Capa 1: Conv((3, 3), 1 => 16, relu, pad=1)
+      La salida de esta capa tiene dimension (8, 8, 16, 1)
+   Capa 2: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (4, 4, 16, 1)
+   Capa 3: Conv((3, 3), 16 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (4, 4, 32, 1)
+   Capa 4: #29
+      La salida de esta capa tiene dimension (512, 1)
+   Capa 5: Dense(512 => 4)
+      La salida de esta capa tiene dimension (4, 1)
+   Capa 6: softmax
+      La salida de esta capa tiene dimension (4, 1)
+
+Comenzando entrenamiento (esto podría tardar varios minutos)...
+
+Fold 1: Ciclos: 125 Precision: 98.89502762430939 %
+Fold 2: Ciclos: 44 Precision: 84.5303867403315 %
+Fold 3: Ciclos: 55 Precision: 96.7032967032967 %
+Fold 4: Ciclos: 42 Precision: 93.95604395604396 %
+Fold 5: Ciclos: 38 Precision: 96.7032967032967 %
+Fold 6: Ciclos: 39 Precision: 96.7032967032967 %
+Fold 7: Ciclos: 37 Precision: 96.15384615384616 %
+Fold 8: Ciclos: 41 Precision: 98.9010989010989 %
+Fold 9: Ciclos: 15 Precision: 100.0 %
+
+Mejor Fold(9):
+Accuracy: 0.9851485148514851    ErrorRate: 0.014851485148514865 Recall: 0.9851485148514851      Specificity: 0.9955947283917581 Precision: 0.9854687794360831   NPV: 0.9951790675111334 F1: 0.9852110060930946
+
+MATRIZ DE CONFUSIÓN
+Filas = clase real, Columnas = clase predicha
+
+            nivel_1     nivel_3     nivel_5     nivel_7
+------------------------------------------------------------
+nivel_1     54          0           0           0
+nivel_3     0           57          0           1
+nivel_5     0           0           47          1
+nivel_7     1           0           0           41
+
+
+
+
+8 x 8 pixels RGB
+Encontradas 202 imagenes
+La RNA tiene 6 capas:
+   Capa 1: Conv((3, 3), 3 => 16, relu, pad=1)
+      La salida de esta capa tiene dimension (8, 8, 16, 1)
+   Capa 2: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (4, 4, 16, 1)
+   Capa 3: Conv((3, 3), 16 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (4, 4, 32, 1)
+   Capa 4: #32
+      La salida de esta capa tiene dimension (512, 1)
+   Capa 5: Dense(512 => 4)
+      La salida de esta capa tiene dimension (4, 1)
+   Capa 6: softmax
+      La salida de esta capa tiene dimension (4, 1)
+
+Comenzando entrenamiento (esto podría tardar varios minutos)...
+
+Fold 1: Ciclos: 81 Precision: 94.47513812154696 %
+Fold 2: Ciclos: 43 Precision: 89.50276243093923 %
+Fold 3: Ciclos: 48 Precision: 92.85714285714286 %
+Fold 4: Ciclos: 42 Precision: 90.10989010989012 %
+Fold 5: Ciclos: 18 Precision: 100.0 %
+Fold 6: Ciclos: 37 Precision: 95.6043956043956 %
+Fold 7: Ciclos: 50 Precision: 98.9010989010989 %
+Fold 8: Ciclos: 45 Precision: 97.8021978021978 %
+Fold 9: Ciclos: 41 Precision: 96.7032967032967 %
+
+Mejor Fold(5):
+Accuracy: 0.9900990099009901    ErrorRate: 0.00990099009900991  Recall: 0.9900990099009901      Specificity: 0.9967065456545655 Precision: 0.9902980443885934   NPV: 0.9966728043230821 F1: 0.9901000980303153
+
+MATRIZ DE CONFUSIÓN
+Filas = clase real, Columnas = clase predicha
+
+            nivel_1     nivel_3     nivel_5     nivel_7
+------------------------------------------------------------
+nivel_1     53          1           0           0
+nivel_3     0           58          0           0
+nivel_5     0           0           47          1
+nivel_7     0           0           0           42
+
+
+
+
+16 x 16 pixels grises
+Encontradas 202 imagenes
+La RNA tiene 6 capas:
+   Capa 1: Conv((3, 3), 1 => 16, relu, pad=1)
+      La salida de esta capa tiene dimension (16, 16, 16, 1)
+   Capa 2: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (8, 8, 16, 1)
+   Capa 3: Conv((3, 3), 16 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (8, 8, 32, 1)
+   Capa 4: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (4, 4, 32, 1)
+   Capa 5: #35
+      La salida de esta capa tiene dimension (512, 1)
+   Capa 6: Dense(512 => 4)
+      La salida de esta capa tiene dimension (4, 1)
+
+Comenzando entrenamiento (esto podría tardar varios minutos)...
+
+Fold 1: Ciclos: 57 Precision: 70.1657458563536 %
+Fold 2: Ciclos: 37 Precision: 69.61325966850829 %
+Fold 3: Ciclos: 104 Precision: 99.45054945054946 %
+Fold 4: Ciclos: 45 Precision: 97.8021978021978 %
+Fold 5: Ciclos: 58 Precision: 99.45054945054946 %
+Fold 6: Ciclos: 25 Precision: 100.0 %
+Fold 7: Ciclos: 7 Precision: 100.0 %
+Fold 8: Ciclos: 43 Precision: 99.45054945054946 %
+Fold 9: Ciclos: 13 Precision: 100.0 %
+
+Mejor Fold(6):
+Accuracy: 0.995049504950495     ErrorRate: 0.004950495049504955 Recall: 0.995049504950495       Specificity: 0.9981937382927482 Precision: 0.9951395139513951   NPV: 0.998019801980198  F1: 0.995050689751863
+
+MATRIZ DE CONFUSIÓN
+Filas = clase real, Columnas = clase predicha
+
+            nivel_1     nivel_3     nivel_5     nivel_7
+------------------------------------------------------------
+nivel_1     54          0           0           0
+nivel_3     1           57          0           0
+nivel_5     0           0           48          0
+nivel_7     0           0           0           42
+
+
+
+
+32 x 32 pixels grises
+Encontradas 202 imagenes
+La RNA tiene 8 capas:
+   Capa 1: Conv((3, 3), 1 => 16, relu, pad=1)
+      La salida de esta capa tiene dimension (32, 32, 16, 1)
+   Capa 2: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (16, 16, 16, 1)
+   Capa 3: Conv((3, 3), 16 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (16, 16, 32, 1)
+   Capa 4: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (8, 8, 32, 1)
+   Capa 5: Conv((3, 3), 32 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (8, 8, 32, 1)
+   Capa 6: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (4, 4, 32, 1)
+   Capa 7: #38
+      La salida de esta capa tiene dimension (512, 1)
+   Capa 8: Dense(512 => 4)
+      La salida de esta capa tiene dimension (4, 1)
+
+Comenzando entrenamiento (esto podría tardar varios minutos)...
+
+Fold 1: Ciclos: 59 Precision: 80.11049723756905 %
+Fold 2: Ciclos: 43 Precision: 69.06077348066299 %
+Fold 3: Ciclos: 42 Precision: 100.0 %
+Fold 4: Ciclos: 45 Precision: 86.26373626373626 %
+Fold 5: Ciclos: 60 Precision: 98.9010989010989 %
+Fold 6: Ciclos: 24 Precision: 100.0 %
+Fold 7: Ciclos: 49 Precision: 98.9010989010989 %
+Fold 8: Ciclos: 20 Precision: 100.0 %
+Fold 9: Ciclos: 5 Precision: 100.0 %
+
+Mejor Fold(3):
+Accuracy: 0.9900990099009901    ErrorRate: 0.00990099009900991  Recall: 0.9900990099009901      Specificity: 0.9967065456545655 Precision: 0.9900990099009901   NPV: 0.9967065456545655 F1: 0.9900990099009901
+
+MATRIZ DE CONFUSIÓN
+Filas = clase real, Columnas = clase predicha
+
+            nivel_1     nivel_3     nivel_5     nivel_7
+------------------------------------------------------------
+nivel_1     54          0           0           0
+nivel_3     0           57          0           1
+nivel_5     0           0           48          0
+nivel_7     0           1           0           41
+
+
+
+

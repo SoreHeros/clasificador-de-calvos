@@ -1,0 +1,171 @@
+8 x 8 pixels grises
+Encontradas 347 imagenes
+┌ Warning: `Flux.params(m...)` is deprecated. Use `Flux.trainable(model)` for parameter collection,
+│ and the explicit `gradient(m -> loss(m, x, y), model)` for gradient computation.
+└ @ Flux C:\Users\Heros\.julia\packages\Flux\DZYiO\src\deprecations.jl:93
+La RNA tiene 6 capas:
+   Capa 1: Conv((3, 3), 1 => 16, relu, pad=1)
+      La salida de esta capa tiene dimension (8, 8, 16, 1)
+   Capa 2: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (4, 4, 16, 1)
+   Capa 3: Conv((3, 3), 16 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (4, 4, 32, 1)
+   Capa 4: #29
+      La salida de esta capa tiene dimension (512, 1)
+   Capa 5: Dense(512 => 7)
+      La salida de esta capa tiene dimension (7, 1)
+   Capa 6: softmax
+      La salida de esta capa tiene dimension (7, 1)
+
+Comenzando entrenamiento (esto podría tardar varios minutos)...
+
+Fold 1: Ciclos: 90 Precision: 63.78205128205128 %
+Fold 2: Ciclos: 41 Precision: 56.08974358974359 %
+Fold 3: Ciclos: 74 Precision: 77.88461538461539 %
+
+Mejor Fold(3):
+Accuracy: 0.7463976945244957    ErrorRate: 0.25360230547550433  Recall: 0.7463976945244957      Specificity: 0.9583321078505068 Precision: 0.746619874892285    NPV: 0.9587258845336168 F1: 0.7456199533995929
+
+MATRIZ DE CONFUSIÓN
+Filas = clase real, Columnas = clase predicha
+
+            nivel_1     nivel_2     nivel_3     nivel_4     nivel_5     nivel_6     nivel_7
+------------------------------------------------------------------------------------------------
+nivel_1     47          2           1           1           1           2           0
+nivel_2     4           52          1           3           2           1           0
+nivel_3     1           4           46          5           1           0           1
+nivel_4     3           1           5           23          5           2           2
+nivel_5     0           0           2           4           34          5           3
+nivel_6     0           2           0           0           6           29          4
+nivel_7     1           2           2           0           3           6           28
+
+
+
+
+8 x 8 pixels RGB
+Encontradas 347 imagenes
+La RNA tiene 6 capas:
+   Capa 1: Conv((3, 3), 3 => 16, relu, pad=1)
+      La salida de esta capa tiene dimension (8, 8, 16, 1)
+   Capa 2: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (4, 4, 16, 1)
+   Capa 3: Conv((3, 3), 16 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (4, 4, 32, 1)
+   Capa 4: #32
+      La salida de esta capa tiene dimension (512, 1)
+   Capa 5: Dense(512 => 7)
+      La salida de esta capa tiene dimension (7, 1)
+   Capa 6: softmax
+      La salida de esta capa tiene dimension (7, 1)
+
+Comenzando entrenamiento (esto podría tardar varios minutos)...
+
+Fold 1: Ciclos: 121 Precision: 99.67948717948718 %
+Fold 2: Ciclos: 42 Precision: 90.06410256410257 %
+Fold 3: Ciclos: 79 Precision: 99.67948717948718 %
+
+Mejor Fold(1):
+Accuracy: 0.9538904899135446    ErrorRate: 0.04610951008645536  Recall: 0.9538904899135447      Specificity: 0.9927042836800434 Precision: 0.9545711326852      NPV: 0.9922387849226789 F1: 0.9538266964251367
+
+MATRIZ DE CONFUSIÓN
+Filas = clase real, Columnas = clase predicha
+
+            nivel_1     nivel_2     nivel_3     nivel_4     nivel_5     nivel_6     nivel_7
+------------------------------------------------------------------------------------------------
+nivel_1     53          0           0           0           1           0           0
+nivel_2     1           60          1           0           0           0           1
+nivel_3     1           0           55          2           0           0           0
+nivel_4     0           0           2           39          0           0           0
+nivel_5     0           0           0           1           47          0           0
+nivel_6     0           0           0           0           0           40          1
+nivel_7     0           0           0           1           2           2           37
+
+
+
+
+16 x 16 pixels grises
+Encontradas 347 imagenes
+La RNA tiene 6 capas:
+   Capa 1: Conv((3, 3), 1 => 16, relu, pad=1)
+      La salida de esta capa tiene dimension (16, 16, 16, 1)
+   Capa 2: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (8, 8, 16, 1)
+   Capa 3: Conv((3, 3), 16 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (8, 8, 32, 1)
+   Capa 4: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (4, 4, 32, 1)
+   Capa 5: #35
+      La salida de esta capa tiene dimension (512, 1)
+   Capa 6: Dense(512 => 7)
+      La salida de esta capa tiene dimension (7, 1)
+
+Comenzando entrenamiento (esto podría tardar varios minutos)...
+
+Fold 1: Ciclos: 124 Precision: 92.3076923076923 %
+Fold 2: Ciclos: 45 Precision: 68.26923076923077 %
+Fold 3: Ciclos: 97 Precision: 99.67948717948718 %
+
+Mejor Fold(3):
+Accuracy: 0.9711815561959655    ErrorRate: 0.028818443804034533 Recall: 0.9711815561959655      Specificity: 0.9952288828921604 Precision: 0.9716517515349335   NPV: 0.9955037993903594 F1: 0.9709831326623766
+
+MATRIZ DE CONFUSIÓN
+Filas = clase real, Columnas = clase predicha
+
+            nivel_1     nivel_2     nivel_3     nivel_4     nivel_5     nivel_6     nivel_7
+------------------------------------------------------------------------------------------------
+nivel_1     54          0           0           0           0           0           0
+nivel_2     2           61          0           0           0           0           0
+nivel_3     0           0           58          0           0           0           0
+nivel_4     0           0           1           37          2           1           0
+nivel_5     0           1           0           0           46          1           0
+nivel_6     0           0           0           0           0           39          2
+nivel_7     0           0           0           0           0           0           42
+
+
+
+
+32 x 32 pixels grises
+Encontradas 347 imagenes
+La RNA tiene 8 capas:
+   Capa 1: Conv((3, 3), 1 => 16, relu, pad=1)
+      La salida de esta capa tiene dimension (32, 32, 16, 1)
+   Capa 2: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (16, 16, 16, 1)
+   Capa 3: Conv((3, 3), 16 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (16, 16, 32, 1)
+   Capa 4: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (8, 8, 32, 1)
+   Capa 5: Conv((3, 3), 32 => 32, relu, pad=1)
+      La salida de esta capa tiene dimension (8, 8, 32, 1)
+   Capa 6: MaxPool((2, 2))
+      La salida de esta capa tiene dimension (4, 4, 32, 1)
+   Capa 7: #38
+      La salida de esta capa tiene dimension (512, 1)
+   Capa 8: Dense(512 => 7)
+      La salida de esta capa tiene dimension (7, 1)
+
+Comenzando entrenamiento (esto podría tardar varios minutos)...
+
+Fold 1: Ciclos: 86 Precision: 56.41025641025641 %
+Fold 2: Ciclos: 38 Precision: 24.358974358974358 %
+Fold 3: Ciclos: 63 Precision: 100.0 %
+
+Mejor Fold(3):
+Accuracy: 0.9423631123919308    ErrorRate: 0.057636887608069176 Recall: 0.9423631123919307      Specificity: 0.9904295764837195 Precision: 0.9437258078578844   NPV: 0.9916158708810888 F1: 0.9421445583073146
+
+MATRIZ DE CONFUSIÓN
+Filas = clase real, Columnas = clase predicha
+
+            nivel_1     nivel_2     nivel_3     nivel_4     nivel_5     nivel_6     nivel_7
+------------------------------------------------------------------------------------------------
+nivel_1     52          1           1           0           0           0           0
+nivel_2     0           63          0           0           0           0           0
+nivel_3     0           1           57          0           0           0           0
+nivel_4     0           1           3           36          1           0           0
+nivel_5     0           0           0           0           46          2           0
+nivel_6     1           0           0           1           0           37          2
+nivel_7     0           0           0           0           1           5           36
+
+
+
+
